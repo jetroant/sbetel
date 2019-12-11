@@ -1,0 +1,17 @@
+Package: sbetel
+Type: Package
+Title: Estimation of moment condition models with smoothed BETEL
+Version: 0.1
+Date: 2019-12-06
+Author: Jetro Anttonen <jetro.a@gmail.com>
+Maintainer: Jetro Anttonen <jetro.a@gmail.com>
+Description: Estimation of moment condition models with smoothed Bayesian exponentially
+    tilted empirical likelihood (smoothed BETEL). 
+Imports: 
+    Rcpp (>= 1.0.2),
+    mvtnorm,
+    gmm,
+    sandwich
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 7.0.1
+Encoding: UTF-8
