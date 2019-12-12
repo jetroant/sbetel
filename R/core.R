@@ -21,6 +21,8 @@
 #' The prior mean of the coefficients for own first lags in the VAR model. 
 #' For series with a priori more persistent dynamics, values closer to zero 
 #' can be chosen. Defaults to zero for all series.
+#' @param sigma Logical. Defaults to \code{FALSE}. If set to \code{TRUE}, the 
+#' Cholesky decomposition of the covariance of the errors is estimated.
 #' @param additional_priors \code{NULL} or numerical vector of length 2, where
 #' both elements \code{> 0}. First element controls the inverse weight of
 #' \emph{sum-of-coefficients} (SOC) prior whereas the other controls the 
@@ -36,7 +38,8 @@ init_sbetel <- function(y,
                         p = "auto", 
                         lambda = "auto", 
                         bw = "auto",
-                        stat = rep(0, ncol(y)), 
+                        stat = rep(0, ncol(y)),
+                        sigma = FALSE,
                         additional_priors = NULL) {
   
   #Chooses lags ('p') and shrinkage ('lambda')
@@ -71,7 +74,11 @@ init_sbetel <- function(y,
   Sigma <- t(yy - xx %*% OLS_est) %*% (yy - xx %*% OLS_est)/ nrow(yy)
   cross_xx_inv <- chol2inv( chol (crossprod(xx)))
   OLS_cov <- kronecker(Sigma, cross_xx_inv)
-  th_initial <- c(OLS_est, t(chol(Sigma))[!upper.tri(Sigma)])
+  if(sigma == TRUE) {
+    th_initial <- c(OLS_est, t(chol(Sigma))[!upper.tri(Sigma)])
+  } else {
+    th_initial <- c(OLS_est)
+  }
   
   #Parameter covariance matrix from GMM for RWMH algorithm to use
   g_gmm <- function(th, x) {
@@ -107,7 +114,8 @@ init_sbetel <- function(y,
                 xy = xy,
                 th_initial = th_initial,
                 cov_initial = cov_initial,
-                type = "var")
+                type = "var",
+                sigma = sigma)
   
   model
 }
@@ -210,9 +218,13 @@ est_sbetel <- function(model,
   
   #Set colnames for the sample
   if(model$type == "var") {
-    colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$xy$xx))),
-                       paste0("C_", 1:((ncol(model$y)*(ncol(model$y)+1))/2))
-    )
+    if(model$sigma == TRUE) {
+      colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$xy$xx))),
+                         paste0("C_", 1:((ncol(model$y)*(ncol(model$y)+1))/2))
+      )
+    } else {
+      colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$xy$xx))))
+    }
   }
   
   #Scrapping the burn-in sample

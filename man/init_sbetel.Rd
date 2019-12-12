@@ -10,6 +10,7 @@ init_sbetel(
   lambda = "auto",
   bw = "auto",
   stat = rep(0, ncol(y)),
+  sigma = FALSE,
   additional_priors = NULL
 )
 }
@@ -34,6 +35,9 @@ chosen according to \code{bwAndrews()} from \code{sandwich} package.}
 The prior mean of the coefficients for own first lags in the VAR model. 
 For series with a priori more persistent dynamics, values closer to zero 
 can be chosen. Defaults to zero for all series.}
+
+\item{sigma}{Logical. Defaults to \code{FALSE}. If set to \code{TRUE}, the 
+Cholesky decomposition of the covariance of the errors is estimated.}
 
 \item{additional_priors}{\code{NULL} or numerical vector of length 2, where
 both elements \code{> 0}. First element controls the inverse weight of
