@@ -81,6 +81,15 @@ init_sbetel <- function(y,
                         wmatrix = "ident", optfct = "nlminb")
   cov_initial <- gmm_model$vcov
   
+  #Check for computational singularity of the initial covariance matrix
+  #and load the diagonal if necessary to obtain a non-singular initial 
+  #covariance matrix estimator.
+  if(min(eigen(cov_initial)$values) < 0) {
+    while(min(eigen(cov_initial)$values) < 0) {
+      diag(cov_initial) <- diag(cov_initial)*1.01
+    }
+  }
+  
   #Chooses the bandwidth for smoothing
   if(bw == "auto") {
     bw <- sandwich::bwAndrews(gmm_model, kernel = "Bartlett", prewhite = 0)
