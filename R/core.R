@@ -116,13 +116,9 @@ init_sbetel <- function(y,
 #' eval_sbetel(model$th_initial, model)
 #' @export
 eval_sbetel <- function(th, model, itermax = 20) {
-  #Warnings are suppressed for now, 
-  #as inv_sympd() from armadillo (c++) produces false warnings
-  suppressWarnings(
     etel_rcpp(th = th, g = model$g, p = model$p, y = model$y, 
               bw = model$bw, lambda = model$lambda, td = model$xy$td,
               itermax = itermax)
-  )
 }
 
 #Estimates the parameter posterior distribution using RWMH algorithm
