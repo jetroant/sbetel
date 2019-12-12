@@ -41,13 +41,13 @@ auto_tune <- function(model, target = c(0.22, 0.28),
     if(length(direction) > limit) stop("Autotune failed. Limit reached.")
     
     s <- est_sbetel(model, N = n, tune = tune, verbose = FALSE)
-    if(s$accrate > target[2]) {
+    if(s$output$accrate > target[2]) {
       
       #Step size halves if the direction of the search changes
       direction <- c(1, direction)
       if(length(direction) != 1 & direction[1] == -direction[2]) step <- step/2
       tune <- tune + step
-    } else if(s$accrate < target[1]) {
+    } else if(s$output$accrate < target[1]) {
       
       #Step size halves if the direction of the search changes
       direction <- c(-1, direction)
@@ -58,13 +58,13 @@ auto_tune <- function(model, target = c(0.22, 0.28),
       
       #Parameter is accepted if 'accrate' is still within the target
       s <- est_sbetel(model, N = 100, tune = tune, verbose = FALSE)
-      if(s$accrate > target[1] & s$accrate < target[2]) {
+      if(s$output$accrate > target[1] & s$output$accrate < target[2]) {
         found <- TRUE
       }
     }
   }
   
-  if(verbose == TRUE) cat(paste0("Autotune: 'tune' = ", tune, " / 'accrate' ~ ", round(s$accrate, 2), " / 'n' = ", n, "\n"))
-  list(accrate = s$accrate, tune = tune, iters = length(direction))
+  if(verbose == TRUE) cat(paste0("Autotune: 'tune' = ", tune, " / 'accrate' ~ ", round(s$output$accrate, 2), " / 'n' = ", n, "\n"))
+  list(accrate = s$output$accrate, tune = tune, iters = length(direction))
 }
 
