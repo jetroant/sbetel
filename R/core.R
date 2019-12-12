@@ -228,6 +228,8 @@ est_sbetel <- function(model,
                  raw_sample = mat,
                  likelihoods = likelihoods,
                  accrate = accrate,
+                 tune = tune,
+                 itermax = itermax,
                  burned = list(sample = mat_burned, likelihoods = likelihoods_burned),
                  moves = moves,
                  time = time)
@@ -247,6 +249,7 @@ est_sbetel <- function(model,
   if(verbose == TRUE) cat(paste0("Acceptance rate: ", accrate, "\n"))
   if(verbose == TRUE) cat(paste0("Time: ", round(time, 3), " ", attributes(time)$units, "\n"))
   
-  output
+  model$output <- output
+  model
 }
 
