@@ -52,7 +52,11 @@ auto_tune <- function(model, target = c(0.22, 0.28),
       #Step size halves if the direction of the search changes
       direction <- c(-1, direction)
       if(length(direction) != 1 & direction[1] == -direction[2]) step <- step/2
-      tune <- tune - step
+      if((tune - step) < 0) {
+        tune <- tune/2
+      } else {
+        tune <- tune - step
+      }
       
     } else {
       

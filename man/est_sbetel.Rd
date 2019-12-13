@@ -4,34 +4,48 @@
 \alias{est_sbetel}
 \title{Estimate a smoothed BETEL model}
 \usage{
-est_sbetel(model, N, tune = "auto", itermax = 20, burn = NULL, verbose = TRUE)
+est_sbetel(
+  model,
+  N,
+  tune = "auto",
+  itermax = 20,
+  burn = NULL,
+  n = 100,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{model}{A list returned by \code{init_sbetel()}, defining the model.}
+\item{model}{A list returned by \code{init_sbetel()} defining the model.}
 
 \item{N}{Number of draws from the posterior distribution.}
 
 \item{tune}{A parameter that controls the step size of the RWMH algorithm.
 Defaults to \code{"auto"} in which case sufficiently efficient parameter value
-is automatically chosen by mimicking the manual tuning process with \code{N = 100}.
+is automatically chosen by mimicking the manual tuning process with \code{N = n}.
 Causion is advised when using this default setting.}
 
 \item{itermax}{Maximum number of Newton-Rhapson iterations within the evaluation 
-of the likelihood.}
+of the likelihood. Defaults to \code{itermax = 20}.}
 
 \item{burn}{\code{NULL} or numerical value \code{> 0}. The length of the 
 burn-in sample. Defaults to \code{NULL} in which case there is no burn-in.}
 
-\item{verbose}{Logical. If \code{TRUE} messages are produced. Defaults to \code{TRUE}.}
+\item{n}{Only used if \code{tune = "auto"}. The number of draws used for auto tuning the 
+step size. Defaults to \code{n = 100}.}
+
+\item{verbose}{Logical. Defaults to \code{TRUE} in which case messages are produced.}
 }
 \value{
-\code{est_sbetel()} returns a list containing the output of the 
+\code{est_sbetel()} returns a list containing the model and the output of the 
 RWMH algorithm.
 }
 \description{
-Estimates a smoothed BETEL model by generating a sample
-from parameter posterior distribution by a RWMH algorithm.
+Estimate a smoothed BETEL model by generating a sample
+from the parameter posterior distribution with a RWMH algorithm.
+}
+\details{
+TBA
 }
 \examples{
-model_output <- est_sbetel(model, N = 1000)
+model_output <- est_sbetel(model = model, N = 1000)
 }

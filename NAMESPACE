@@ -5,5 +5,4 @@ importFrom(Rcpp, evalCpp)
 
 export(est_sbetel)
 export(eval_sbetel)
-export(forecast_sbetel)
 export(init_sbetel)

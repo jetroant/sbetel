@@ -5,57 +5,58 @@
 \title{Initialize a smoothed BETEL model}
 \usage{
 init_sbetel(
+  g = "var",
   y,
-  p = "auto",
-  lambda = "auto",
   bw = "auto",
-  stat = rep(0, ncol(y)),
-  sigma = FALSE,
-  additional_priors = NULL
+  args = list(),
+  initial = list(th = NULL, cov = NULL),
+  verbose = TRUE
 )
 }
 \arguments{
-\item{y}{\code{(T x n)} numerical matrix with \code{n} time series
-in its columns.}
+\item{g}{A function of the form \code{g(th, y, args)} defining the model.
+Inputs should include a numerical parameter vector \code{th}, a data matrix 
+\code{y} and optional further arguments through a list called \code{args}.
+Output shoud be a numerical matrix with its columns corresponding to the sample
+moment conditions of the model. Defaults to \code{"var"} in which case a 
+ready-made function for vector autoregressive models is used. For more, 
+see details.}
 
-\item{p}{Lag length. Defaults to \code{"auto"} in which case the optimal
-lag length is chosen according to the out-of-sample mean squared 
-forecasting error of the joint posterior mode.}
+\item{y}{A data matrix. Input for \code{g()} above. E.g. for \code{g = "var"} this
+would be a \code{T x k} matrix with \code{T} observations of \code{k} variables.}
 
-\item{lambda}{The inverse amount of shrinkage towards the Minnesotaprior \code{(> 0)}. 
-Defaults to \code{"auto"} in which case the optimal shrinkage is chosen according to the 
-out-of-sample mean squared forecasting error of the joint posterior mode. 
-No shrinkage is obtained by setting this to \code{Inf}.}
+\item{bw}{Integer \code{(>= 0)}. The bandwidth parameter controlling smoothing of the moment 
+conditions. Defaults to "auto" in which case the optimal parameter value is 
+chosen according to \code{bwAndrews()}. For more, see details.}
 
-\item{bw}{Integer \code{(>= 0)}. The bandwidth parameter used for smoothing of the moment 
-conditions. Defaults to \code{"auto"} in which case the optimal value is 
-chosen according to \code{bwAndrews()} from \code{sandwich} package.}
+\item{args}{A list containing optional further arguments to \code{g()}.
+If \code{g = "var"} is chosen, this can be left undefined in which case the 
+parameters of the var model are automatically chosen to minimize the 
+out-of-sample squared forecasting errors of the model. For example, the lag 
+length and the shrinkage parameter can be manually fixed by defining 
+\code{args = list(p = 5, lambda = 0.2)}. For more, see details.}
 
-\item{stat}{A numerical vector of length \code{n} \code{(0 <= n < 1)}. 
-The prior mean of the coefficients for own first lags in the VAR model. 
-For series with a priori more persistent dynamics, values closer to zero 
-can be chosen. Defaults to zero for all series.}
+\item{initial}{A list of initial parameter values that defaults to 
+\code{list(th = NULL, cov = NULL)}. At least \code{initial$th} must be predefined, 
+if \code{g} is not set as \code{"var"}. If \code{initial$cov} is not predefined, 
+it is approximated with a two-step GMM.}
 
-\item{sigma}{Logical. Defaults to \code{FALSE}. If set to \code{TRUE}, the 
-Cholesky decomposition of the covariance of the errors is estimated.}
-
-\item{additional_priors}{\code{NULL} or numerical vector of length 2, where
-both elements \code{> 0}. First element controls the inverse weight of
-\emph{sum-of-coefficients} (SOC) prior whereas the other controls the 
-\emph{initial-dummy-observation} (IDO) prior. Typical values in the literature 
-for these values would be \code{c(1,1)}. Defaults to \code{NULL} in which case 
-these priors are not used.}
+\item{verbose}{Logical. Defaults to \code{TRUE} in which case messages are produced.}
 }
 \value{
-\code{init_sbetel()} returns a list that defines the model and can be passed
-to \code{eval_sbetel()} or \code{est_sbetel}.
+\code{init_sbetel()} returns a list that defines a sbetel model 
+and can be passed on to \code{eval_sbetel()} or \code{est_sbetel()}.
 }
 \description{
-Initialize a smoothed (VAR) BETEL model by providing the data and 
-the desired parameters. This function returns a list that defines
-the model and can be passed either to \code{eval_sbetel()} or 
+Initialize a smoothed BETEL model by providing the model defining 
+function \code{g()} and the data \code{y} to be used for estimation of the model. Alternatively 
+ready-made functions can be used (e.g. by setting \code{g = "var"}). \code{init_sbetel()} returns 
+a list that defines the model and that can be passed on either to \code{eval_sbetel()} or 
 \code{est_sbetel()}.
 }
+\details{
+TBA
+}
 \examples{
-model <- init_sbetel(y)
+model <- init_sbetel(g = "var", y = y)
 }
