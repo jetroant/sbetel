@@ -32,7 +32,7 @@ auto_tune <- function(model, target = c(0.22, 0.28),
                       limit = 20, n = 100, verbose = TRUE) {
   if(verbose == TRUE) cat(paste0("Auto tuning step size... \n"))
   found <- FALSE
-  tune <- 2.38^2/length(model$th_initial)
+  tune <- 2.38^2/length(model$initial$th)
   step <- 0.1
   direction <- c()
   while(found == FALSE) {

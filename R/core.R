@@ -152,7 +152,7 @@ init_sbetel <- function(g = "var",
 #' @return \code{eval_sbetel()} returns a numerical value that is the unnormalized
 #' posterior density at \code{th}.
 #' @examples
-#' eval_sbetel(model$initial$th, model)
+#' eval_sbetel(th = model$initial$th, model = model)
 #' @export
 eval_sbetel <- function(th, model, itermax = 20) {
     etel_rcpp(th = th, g = model$g, p = model$args$p, y = model$y, 
@@ -175,6 +175,8 @@ eval_sbetel <- function(th, model, itermax = 20) {
 #' of the likelihood.
 #' @param burn \code{NULL} or numerical value \code{> 0}. The length of the 
 #' burn-in sample. Defaults to \code{NULL} in which case there is no burn-in.
+#' @param n Only used if \code{tune = "auto"}. The number of draws used for auto tuning the 
+#' step size. Defaults to \code{n = 100}.
 #' @param verbose Logical. If \code{TRUE} messages are produced. Defaults to \code{TRUE}. 
 #' @return \code{est_sbetel()} returns a list containing the output of the 
 #' RWMH algorithm.
@@ -186,11 +188,12 @@ est_sbetel <- function(model,
                        tune = "auto",
                        itermax = 20, 
                        burn = NULL,
+                       n = 100,
                        verbose = TRUE) {
   
   #Choosing the tuning parameter for suitable step size
   if(tune == "auto") {
-    autotune_output <- auto_tune(model, verbose = verbose)
+    autotune_output <- auto_tune(model, n = n, verbose = verbose)
     tune <- autotune_output$tune
   }
   
@@ -201,13 +204,13 @@ est_sbetel <- function(model,
   
   #Pre-drawing the RW-steps
   if(verbose == TRUE) cat(paste0("Pre-drawing rw-steps... (N = ", N, ") \n"))
-  moves <- mvtnorm::rmvnorm(N, mean = rep(0, length(model$th_initial)), sigma = model$cov_initial*tune)
+  moves <- mvtnorm::rmvnorm(N, mean = rep(0, length(model$initial$th)), sigma = model$initial$cov*tune)
 
   #Initializing RWMH chain
-  mat <- matrix(NA, ncol = length(model$th_initial), nrow = N + 1)
-  mat[1,] <- model$th_initial
+  mat <- matrix(NA, ncol = length(model$initial$th), nrow = N + 1)
+  mat[1,] <- model$initial$th
   likelihoods <- rep(NA, nrow(mat))
-  last_density <- eval_sbetel(model$th_initial, model, itermax)
+  last_density <- eval_sbetel(model$initial$th, model, itermax)
   likelihoods[1] <- last_density
   
   #RWMH chain starts here
@@ -240,7 +243,7 @@ est_sbetel <- function(model,
   
   #Set colnames for the sample
   if(model$type == "var") {
-    if(model$sigma == TRUE) {
+    if(model$args$sigma == TRUE) {
       colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$xy$xx))),
                          paste0("C_", 1:((ncol(model$y)*(ncol(model$y)+1))/2))
       )
