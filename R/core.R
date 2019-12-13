@@ -5,118 +5,139 @@
 #' the model and can be passed either to \code{eval_sbetel()} or 
 #' \code{est_sbetel()}.
 #' 
-#' @param y \code{(T x n)} numerical matrix with \code{n} time series
-#' in its columns.
-#' @param p Lag length. Defaults to \code{"auto"} in which case the optimal
-#' lag length is chosen according to the out-of-sample mean squared 
-#' forecasting error of the joint posterior mode. 
-#' @param lambda The inverse amount of shrinkage towards the Minnesotaprior \code{(> 0)}. 
-#' Defaults to \code{"auto"} in which case the optimal shrinkage is chosen according to the 
-#' out-of-sample mean squared forecasting error of the joint posterior mode. 
-#' No shrinkage is obtained by setting this to \code{Inf}.
+#' @param g A function of the form \code{g(th, y, args)} defining the model.
+#' Inputs should include numerical parameter vector \code{th}, a data matrix 
+#' \code{y} and optional further arguments through a list called \code{args}.
+#' Output shoud be a numerical matrix with its columns corresponding to the sample
+#' moment conditions of the model. Defaults to \code{"var} in which case a 
+#' ready-made function for vector autoregressive models is used. For more, 
+#' see details.
+#' @param y A data matrix. Input for \code{g()} above. E.g. for \code{g = "var} this
+#' would be a \code{T x k} matrix with \code{T} observations of \code{k} variables.
+#' @param bw Integer. The bandwidth parameter controlling the smoothing of the moment 
+#' conditions. Defaults to "auto" in which case the optimal parameter value is 
+#' chosen according to \code{bwAndrews}. For more, see details.
 #' @param bw Integer \code{(>= 0)}. The bandwidth parameter used for smoothing of the moment 
 #' conditions. Defaults to \code{"auto"} in which case the optimal value is 
 #' chosen according to \code{bwAndrews()} from \code{sandwich} package.
-#' @param stat A numerical vector of length \code{n} \code{(0 <= n < 1)}. 
-#' The prior mean of the coefficients for own first lags in the VAR model. 
-#' For series with a priori more persistent dynamics, values closer to zero 
-#' can be chosen. Defaults to zero for all series.
-#' @param sigma Logical. Defaults to \code{FALSE}. If set to \code{TRUE}, the 
-#' Cholesky decomposition of the covariance of the errors is estimated.
-#' @param additional_priors \code{NULL} or numerical vector of length 2, where
-#' both elements \code{> 0}. First element controls the inverse weight of
-#' \emph{sum-of-coefficients} (SOC) prior whereas the other controls the 
-#' \emph{initial-dummy-observation} (IDO) prior. Typical values in the literature 
-#' for these values would be \code{c(1,1)}. Defaults to \code{NULL} in which case 
-#' these priors are not used.
-#' @return \code{init_sbetel()} returns a list that defines the model and can be passed
-#' to \code{eval_sbetel()} or \code{est_sbetel}.
+#' @param args A list containing optional further arguments to \code{g()}.
+#' If \code{g = "var} is chosen this can be left undefined in which case the 
+#' parameters of the var model are automatically chosen to minimize the 
+#' out-of-sample squared forecasting errors of the model. For example, the lag 
+#' length and the shrinkage parameter can be manually fixed by defining 
+#' \code{args = list(p = 5, lambda = 0.2)}. For more, see details.
+#' @param initial A list of initial parameter values that defaults to 
+#' \code{list(th = NULL, cov = NULL)}. At least \code{initial$th} must be predefined, 
+#' if \code{g} is not set as \code{"var"}. If \code{initial$cov} is not predefined, 
+#' it is approximated with a two-step GMM.
+#' @param verbose Logical. If \code{TRUE} messages are produced. Defaults to \code{TRUE}. 
+#' @return \code{init_sbetel()} returns a list that defines a sbetel model 
+#' and can be passed on to \code{eval_sbetel()} or \code{est_sbetel()}.
 #' @examples
-#' model <- init_sbetel(y)
+#' model <- init_sbetel(g = "var", y = y)
 #' @export
-init_sbetel <- function(y,
-                        p = "auto", 
-                        lambda = "auto", 
+init_sbetel <- function(g = "var",
+                        y,
                         bw = "auto",
-                        stat = rep(0, ncol(y)),
-                        sigma = FALSE,
-                        additional_priors = NULL) {
+                        args = list(),
+                        initial = list(th = NULL, cov = NULL),
+                        verbose = TRUE
+                        ) {
   
-  #Chooses lags ('p') and shrinkage ('lambda')
-  if(p == "auto") {
-    p_grid <- 1:floor(nrow(y)/8)
-    if(max(p_grid) > 13) p_grid <- 1:13
-    if(min(p_grid) == 0) p_grid <- 1
-  } else {
-    p_grid <- p
-  }
-  fixed <- NULL
-  if(lambda != "auto") fixed <- lambda
-  objective <- Inf
-  for(i in p_grid) {
-    opt <- shrinkage_selector(y = y, 
-                              p = i, 
-                              stat = stat, 
-                              additional_priors = additional_priors,
-                              fixed = fixed)
-    if(opt$objective < objective) {
-      objective <- opt$objective
-      lambda <- opt$minimum
-      p <- i
+  if(g == "var") {
+    
+    g <- g_var
+    type <- "var"
+    
+    if(is.null(args$stat)) args$stat <- rep(0, ncol(y))
+    if(is.null(args$sigma)) args$sigma <- FALSE
+    if(is.null(args$additional_priors)) args$additional_priors <- NULL
+    
+    #Chooses lags ('p') and shrinkage ('lambda')
+    if(is.null(args$p)) {
+      p_grid <- 1:floor(nrow(y)/8)
+      if(max(p_grid) > 13) p_grid <- 1:13
+      if(min(p_grid) == 0) p_grid <- 1
+    } else {
+      p_grid <- p
     }
-  }
-  
-  #OLS estimates as initial parameter values
-  xy <- build_xy(y, p = p, lambda = lambda, stat = stat)
-  xx <- xy$xx
-  yy <- xy$yy
-  OLS_est <- chol2inv(chol(crossprod(xx))) %*% t(xx) %*% yy
-  Sigma <- t(yy - xx %*% OLS_est) %*% (yy - xx %*% OLS_est)/ nrow(yy)
-  cross_xx_inv <- chol2inv( chol (crossprod(xx)))
-  OLS_cov <- kronecker(Sigma, cross_xx_inv)
-  if(sigma == TRUE) {
-    th_initial <- c(OLS_est, t(chol(Sigma))[!upper.tri(Sigma)])
+    fixed <- NULL
+    if(!is.null(args$lambda)) fixed <- lambda
+    objective <- Inf
+    for(i in p_grid) {
+      opt <- shrinkage_selector(y = y, 
+                                p = i, 
+                                stat = args$stat, 
+                                additional_priors = args$additional_priors,
+                                fixed = fixed)
+      if(opt$objective < objective) {
+        objective <- opt$objective
+        lambda <- opt$minimum
+        p <- i
+      }
+    }
+    args$p <- p
+    args$lambda <- lambda
+    
+    #OLS estimates as initial parameter values
+    xy <- build_xy(y, p = args$p, lambda = args$lambda, stat = args$stat)
+    args$xy <- xy
+    xx <- xy$xx
+    yy <- xy$yy
+    OLS_est <- chol2inv(chol(crossprod(xx))) %*% t(xx) %*% yy
+    Sigma <- t(yy - xx %*% OLS_est) %*% (yy - xx %*% OLS_est)/ nrow(yy)
+    cross_xx_inv <- chol2inv( chol (crossprod(xx)))
+    OLS_cov <- kronecker(Sigma, cross_xx_inv)
+    if(args$sigma == TRUE) {
+      initial$th <- c(OLS_est, t(chol(Sigma))[!upper.tri(Sigma)])
+    } else {
+      initial$th <- c(OLS_est)
+    }
+    
   } else {
-    th_initial <- c(OLS_est)
+    
+    type <- "custom"
+    if(is.null(initial$th)) {
+      stop("Initial parameter values must be provided if g = 'var' is not used!")
+    }
+    
   }
   
   #Parameter covariance matrix from GMM for RWMH algorithm to use
-  g_gmm <- function(th, x) {
-    g_var(th = th, y = y, p = p, lambda = lambda, stat = stat)
+  #(if not provided by user)
+  if(is.null(initial$cov)) {
+    g_gmm <- function(th, x) {
+      g(th = th, y = y, p = args$p, lambda = args$lambda, stat = args$stat)
+    }
+    gmm_model <- gmm::gmm(g_gmm, yy, t0 = initial$th, type = "twoStep", 
+                          wmatrix = "ident", optfct = "nlminb")
+    initial$cov <- gmm_model$vcov
   }
-  gmm_model <- gmm::gmm(g_gmm, yy, t0 = th_initial, type = "twoStep", 
-                        wmatrix = "ident", optfct = "nlminb")
-  cov_initial <- gmm_model$vcov
   
   #Check for computational singularity of the initial covariance matrix
   #and load the diagonal if necessary to obtain a non-singular initial 
   #covariance matrix estimator.
-  if(min(eigen(cov_initial)$values) < 0) {
-    while(min(eigen(cov_initial)$values) < 0) {
-      diag(cov_initial) <- diag(cov_initial)*1.01
+  if(min(eigen(initial$cov)$values) < 0) {
+    while(min(eigen(initial$cov)$values) < 0) {
+      diag(initial$cov) <- diag(initial$cov)*1.01
     }
+    if(verbose == TRUE) cat("Diagonal of the initial parameter covariance matrix loaded to avoid computational singularity.")
   }
   
-  #Chooses the bandwidth for smoothing
+  #Chooses the bandwidth parameter for smoothing
   if(bw == "auto") {
     bw <- sandwich::bwAndrews(gmm_model, kernel = "Bartlett", prewhite = 0)
     bw <- floor(bw/2)
   }
   
   #Collects the model parameters etc.
-  model <- list(y = y,
-                g = g_var,
-                p = p,
-                lambda = lambda,
+  model <- list(g = g,
+                y = y,
                 bw = bw,
-                stat = stat,
-                additional_priors = additional_priors,
+                args = args,
                 xy = xy,
-                th_initial = th_initial,
-                cov_initial = cov_initial,
-                type = "var",
-                sigma = sigma)
-  
+                initial = initial,
+                type = type)
   model
 }
 
