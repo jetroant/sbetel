@@ -120,7 +120,7 @@ init_sbetel <- function(g = "var",
     while(min(eigen(initial$cov)$values) < 0) {
       diag(initial$cov) <- diag(initial$cov)*1.01
     }
-    if(verbose == TRUE) cat("Diagonal of the initial parameter covariance matrix loaded to avoid computational singularity.")
+    if(verbose == TRUE) cat("Diagonal of the initial parameter covariance matrix loaded to avoid computational singularity. \n")
   }
   
   #Chooses the bandwidth parameter for smoothing
