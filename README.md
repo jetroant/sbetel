@@ -19,7 +19,7 @@ Make sure you have Xcode installed. If not, it can be found from the App Store O
 xcode-select --install
 ```
 
-After installing Xcode, a few more steps might still be necessary. For copmrehensive instructions, see: https://thecoatlessprofessor.com/programming/cpp/openmp-in-r-on-os-x/#after-3-4-0
+After installing Xcode, a few more steps might still be necessary. For comprehensive instructions, see: https://thecoatlessprofessor.com/programming/cpp/openmp-in-r-on-os-x/#after-3-4-0
 
 In short, (i) the official gfortran 6.1 build (see: https://gcc.gnu.org/wiki/GFortranBinaries#MacOS-11) and (ii) clang (compiler, see: https://uofi.box.com/v/r-macos-clang-pkg) need to be downloaded and installed.
 
