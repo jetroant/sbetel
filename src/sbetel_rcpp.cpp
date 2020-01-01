@@ -5,9 +5,8 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-double test_rcpp(double num) {
-  double ret = pow(num, 2);
-  return ret;
+List test_rcpp(List l) {
+  return l;
 }
  
 NumericMatrix smooth_rcpp(NumericMatrix gMat, int bw, int td) {
@@ -145,6 +144,7 @@ NumericVector laGrangian_rcpp(NumericMatrix gMat, int itermax, double tol = 1e-1
   return eta;
 }
 
+/*
 // [[Rcpp::export]]
 double etel_rcpp(NumericVector th, 
                  Function g, 
@@ -176,6 +176,36 @@ double etel_rcpp(NumericVector th,
   double ret = as<double>(wrap(arma::sum(p1 - p2)));
   return ret;
 }
+*/
 
- 
+// [[Rcpp::export]]
+double etel_rcpp(NumericVector th, 
+                 Function g, 
+                 NumericMatrix y,
+                 int bw,
+                 int td,
+                 int itermax,
+                 List args) {
+  
+  NumericMatrix gMat = g(th, y, args);
+  NumericMatrix gMat_smooth = smooth_rcpp(gMat, bw, td);
+  NumericVector lambdaHat = laGrangian_rcpp(gMat_smooth, itermax);
+  
+  if(lambdaHat.size() == 0) {
+    return R_NegInf;
+  }
+  
+  arma::vec lambdaHat_arma = as<arma::vec>(lambdaHat);
+  arma::mat gMat_smooth_arma = as<arma::mat>(gMat_smooth);
+  arma::vec p1 = gMat_smooth_arma * lambdaHat_arma;
+  
+  //LogSumExp
+  double maxx = max(as<NumericVector>(wrap(p1)));
+  arma::vec expp = arma::exp(p1 - maxx);
+  double summ = arma::sum(expp);
+  double p2 = log(summ) + maxx;
+  
+  double ret = as<double>(wrap(arma::sum(p1 - p2)));
+  return ret;
+}
 

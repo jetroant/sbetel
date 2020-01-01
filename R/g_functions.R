@@ -1,5 +1,9 @@
 
-g_var <- function(th, y, p, lambda = Inf, stat = NULL) {
+g_var <- function(th, y, args) {
+  
+  p <- args$p
+  lambda <- args$lambda
+  stat <- args$stat
   
   xy <- build_xy(y = y, p = p, lambda = lambda, stat = stat)
   n <- ncol(y)
