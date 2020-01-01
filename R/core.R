@@ -43,7 +43,9 @@ init_sbetel <- function(g = "var",
                         verbose = TRUE
                         ) {
   
-  if(g == "var") {
+  if(is.character(g)) {
+    
+    if(g != "var") stop("Only 'var' defined for 'g' of type 'character' in 'init_sbetel'")
     
     g <- g_var
     type <- "var"
@@ -105,10 +107,18 @@ init_sbetel <- function(g = "var",
   #Parameter covariance matrix from GMM for RWMH algorithm to use
   #(if not provided by user)
   if(is.null(initial$cov)) {
-    g_gmm <- function(th, x) {
-      g(th = th, y = y, p = args$p, lambda = args$lambda, stat = args$stat)
+    if(type == "var") {
+      g_gmm <- function(th, x) {
+        g(th = th, y = y, p = args$p, lambda = args$lambda, stat = args$stat)
+      }
+      
+    } else {
+      g_gmm <- function(th, x) {
+        g(th = th, y = y, args = args)
+      }
     }
-    gmm_model <- gmm::gmm(g_gmm, yy, t0 = initial$th, type = "twoStep", 
+    
+    gmm_model <- gmm::gmm(g_gmm, y, t0 = initial$th, type = "twoStep", 
                           wmatrix = "ident", optfct = "nlminb")
     initial$cov <- gmm_model$vcov
   }
@@ -130,13 +140,23 @@ init_sbetel <- function(g = "var",
   }
   
   #Collects the model parameters etc.
-  model <- list(g = g,
-                y = y,
-                bw = bw,
-                args = args,
-                xy = xy,
-                initial = initial,
-                type = type)
+  if(type == "var") {
+    model <- list(g = g,
+                  y = y,
+                  bw = bw,
+                  args = args,
+                  xy = xy,
+                  initial = initial,
+                  type = type)
+  } else {
+    model <- list(g = g,
+                  y = y,
+                  bw = bw,
+                  args = args,
+                  initial = initial,
+                  type = type)
+  }
+  
   model
 }
 
