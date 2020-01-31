@@ -72,3 +72,29 @@ build_xy <- function(y, p, lambda = Inf, stat = NULL, additional_priors = NULL) 
   
   ret
 }
+
+#Returns all permutations of 'n' integers
+permutations <- function(n){
+  if(n == 1){
+    return(matrix(1))
+  } else {
+    sp <- permutations(n-1)
+    p <- nrow(sp)
+    A <- matrix(nrow = n*p, ncol = n)
+    for(i in 1:n){
+      A[(i-1)*p+1:p,] <- cbind(i, sp + (sp >= i))
+    }
+    return(A)
+  }
+}
+
+#Stacks VAR(p) coefficient matrix to VAR(1) coefficient matrix
+stackA <- function(A) {
+  A <- t(A)[,-1]
+  m <- nrow(A)
+  lags <- ncol(A)/m
+  eye <- diag(m*lags-m)
+  A <- rbind(A, cbind(eye, matrix(0, ncol = m, nrow= nrow(eye))))
+  A
+}
+
