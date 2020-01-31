@@ -257,7 +257,7 @@ est_sbetel <- function(model,
   if(model$type == "var") {
     if(model$args$sigma == TRUE) {
       colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$args$xy$xx))),
-                         paste0("C_", 1:((ncol(model$y)*(ncol(model$y)+1))/2))
+                         paste0("P_", 1:((ncol(model$y)*(ncol(model$y)+1))/2))
       )
     } else {
       colnames(mat) <- c(paste0("A_", 1:(ncol(model$y)*ncol(model$args$xy$xx))))

@@ -68,7 +68,12 @@ PQ_try <- function(P, res, perms = permutations(ncol(P)), additional = FALSE) {
 #Generates a sample (of size 'N') from the posterior P(A,P,B|Y) given 
 #a sample from P(A,P|Y) and sign restrictions in 'res'
 #(ADD DOCUMENTATION)
-B_signres_sample <- function(P_post, A_post, shocks, res, N, additional = FALSE) {
+B_signres_sample <- function(model, res, N, additional = FALSE) {
+  
+  shocks <- ncol(model$y)
+  AP_post <- model$output$sample
+  A_post <- model$output$sample[,grep("A", colnames(AP_post))]
+  P_post <- model$output$sample[,grep("P", colnames(AP_post))]
   
   APB_post <- matrix(NA, ncol = ncol(A_post) + ncol(P_post) + shocks^2, nrow = N)
   colnames(APB_post) <- c(paste0("A_", 1:ncol(A_post)), 
@@ -93,7 +98,8 @@ B_signres_sample <- function(P_post, A_post, shocks, res, N, additional = FALSE)
   }
   close(pb)
   
-  APB_post
+  model$output$APB_sample <- APB_post
+  model
 }
 
 
