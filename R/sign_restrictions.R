@@ -66,7 +66,7 @@ PQ_try <- function(P, res, perms = permutations(ncol(P)), additional = FALSE) {
 }
 
 #Generates a sample (of size 'N') from the posterior P(A,P,B|Y) given 
-#a sample from P(A,P|Y) and sign restrictions in 'res'
+#a sample from P(A,P|Y) and the sign restrictions in 'res'
 #(ADD DOCUMENTATION)
 B_signres_sample <- function(model, res, N, additional = FALSE) {
   

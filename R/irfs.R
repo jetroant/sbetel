@@ -1,10 +1,12 @@
 
 #Generates impulse response functions of a sample from P(A,P,B|Y)
 #ADD DOCUMENTATION
-#ADD NARRATIVE SPESIFICS
 irf <- function(model, horizon, narrative = FALSE) {
   
   APB_post <- model$output$APB_sample
+  if(narrative == TRUE) {
+    APB_post <- model$output$APB_sample_narrative$newSample
+  }
   A_post <- APB_post[,grep("A", colnames(APB_post))]
   B_post <- APB_post[,grep("B", colnames(APB_post))]
   if(sqrt(ncol(B_post)) != floor(sqrt(ncol(B_post)))) stop("Something is wrong with 'APB_post'")
@@ -43,7 +45,11 @@ irf <- function(model, horizon, narrative = FALSE) {
     ret[[shock_index]] <- irfs
   }
   
-  model$irfs <- ret
+  if(narrative == TRUE) {
+    model$irfs_narrative <- ret
+  } else {
+    model$irfs <- ret
+  }
   model
 }
 
@@ -52,6 +58,9 @@ irf_plot <- function(model, narrative = FALSE) {
   
   shocks <- ncol(model$y)
   irfs <- model$irfs
+  if(narrative == TRUE) {
+    irfs <- model$irfs_narrative
+  }
   varnames <- colnames(model$y)
   if(is.null(varnames)) varnames <- paste0("Var. ", 1:shocks)
   
@@ -77,7 +86,7 @@ irf_plot <- function(model, narrative = FALSE) {
     
     color <- "tomato"
     plot(mean_sub_irfs, lwd = 2, lty = 2, col = color, ylab = "", xlab = "", 
-         main = paste0("Shock ", col, " on ", varnames[row]), ylim = c(min(quantiles_sub_irfs), max(quantiles_sub_irfs)))
+         main = paste0("Shock ", col, " on ", varnames[row], " (Nar.)"), ylim = c(min(quantiles_sub_irfs), max(quantiles_sub_irfs)))
     grid()
     fanplot::fan(data = quantiles_sub_irfs, data.type = "values", probs = p,
         start = 0, fan.col = colorRampPalette(c(color, "white")),
