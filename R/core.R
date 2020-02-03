@@ -219,7 +219,8 @@ est_sbetel <- function(model,
                        itermax = 20, 
                        burn = NULL,
                        n = 100,
-                       verbose = TRUE) {
+                       verbose = TRUE,
+                       backup = NULL) {
   
   #Choosing the tuning parameter for suitable step size
   if(tune == "auto") {
@@ -268,6 +269,10 @@ est_sbetel <- function(model,
     
     likelihoods[i+1] <- last_density
     if(verbose == TRUE) setTxtProgressBar(pb, i)
+    
+    if(!is.null(backup)) {
+      if(i %% backup == 0) saveRDS(list(mat, likelihoods), paste0("sbetel_chain_", Sys.Date(), ".rds"))
+    } 
   }
   if(verbose == TRUE) close(pb)
   

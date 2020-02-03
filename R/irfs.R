@@ -1,12 +1,13 @@
 
 #Generates impulse response functions of a sample from P(A,P,B|Y)
 #ADD DOCUMENTATION
-irf <- function(model, horizon, narrative = FALSE) {
+irf <- function(model, horizon, narrative = FALSE, gaussian = FALSE) {
   
   APB_post <- model$output$APB_sample
-  if(narrative == TRUE) {
-    APB_post <- model$output$APB_sample_narrative$newSample
-  }
+  if(narrative == TRUE) APB_post <- model$output$APB_sample_narrative$newSample
+  if(gaussian == TRUE) APB_post <- model$output$APB_sample_gaussian
+  if(narrative == TRUE & gaussian == TRUE) APB_post <- model$output$APB_sample_gaussian_narrative$newSample
+  
   A_post <- APB_post[,grep("A", colnames(APB_post))]
   B_post <- APB_post[,grep("B", colnames(APB_post))]
   if(sqrt(ncol(B_post)) != floor(sqrt(ncol(B_post)))) stop("Something is wrong with 'APB_post'")
@@ -45,8 +46,12 @@ irf <- function(model, horizon, narrative = FALSE) {
     ret[[shock_index]] <- irfs
   }
   
-  if(narrative == TRUE) {
+  if(narrative == TRUE & gaussian == FALSE) {
     model$irfs_narrative <- ret
+  } else if(narrative == FALSE & gaussian == TRUE){
+    model$irfs_gaussian <- ret
+  } else if(narrative == TRUE & gaussian == TRUE) {
+    model$irfs_gaussian_narrative <- ret
   } else {
     model$irfs <- ret
   }
@@ -54,15 +59,17 @@ irf <- function(model, horizon, narrative = FALSE) {
 }
 
 #Plots impulse response functions
-irf_plot <- function(model, narrative = FALSE) {
+irf_plot <- function(model, narrative = FALSE, gaussian = FALSE) {
   
   shocks <- ncol(model$y)
   irfs <- model$irfs
-  if(narrative == TRUE) {
-    irfs <- model$irfs_narrative
-  }
+  if(narrative == TRUE) irfs <- model$irfs_narrative
+  if(gaussian == TRUE) irfs <- model$irfs_gaussian
+  if(narrative == TRUE & gaussian == TRUE) irfs <- model$irfs_gaussian_narrative
   varnames <- colnames(model$y)
   if(is.null(varnames)) varnames <- paste0("Var. ", 1:shocks)
+  if(gaussian == TRUE) varnames <- paste0(varnames, " (G)")
+  if(narrative == TRUE) varnames <- paste0(varnames, " (N)")
   
   par(mfrow = c(shocks, shocks))
   indexmat <- matrix(1:shocks^2, ncol = shocks)
@@ -86,7 +93,7 @@ irf_plot <- function(model, narrative = FALSE) {
     
     color <- "tomato"
     plot(mean_sub_irfs, lwd = 2, lty = 2, col = color, ylab = "", xlab = "", 
-         main = paste0("Shock ", col, " on ", varnames[row], " (Nar.)"), ylim = c(min(quantiles_sub_irfs), max(quantiles_sub_irfs)))
+         main = paste0("Shock ", col, " on ", varnames[row]), ylim = c(min(quantiles_sub_irfs), max(quantiles_sub_irfs)))
     grid()
     fanplot::fan(data = quantiles_sub_irfs, data.type = "values", probs = p,
         start = 0, fan.col = colorRampPalette(c(color, "white")),

@@ -109,7 +109,7 @@ H_accept <- function(H_obj, narrative) {
 }
 
 #util for 'narrative_sample()' 5/5
-importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000) {
+importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000, gaussian = FALSE) {
   
   yy <- xy$yy
   td <- ifelse(is.null(xy$td), 0, xy$td)
@@ -123,9 +123,13 @@ importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000) {
   avec <- rep(TRUE, n)
   for(i in 1:n) {
     
-    #Resample the structural shocks (in RR 2018 iid standard normal assumed)
-    E_new[periods,] <- E[sample.int(nrow(E), length(periods), replace = TRUE),]
-    
+    #Resample the structural shocks (in RR 2018 iid standard normal assumed, i.e. gaussian == TRUE)
+    if(gaussian == FALSE) {
+      E_new[periods,] <- E[sample((td+1):nrow(E), length(periods), replace = TRUE),]
+    } else {
+      E_new[periods,] <- matrix(rnorm(length(periods)*ncol(E)), ncol = ncol(E))
+    }
+
     accept <- TRUE
     for(j in 1:length(narrative_obj$restrictions)) {
       
@@ -164,9 +168,11 @@ importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000) {
 #conditional on narrative restrictions given a sample 
 #from P(A,P,B|Y) and the narrative restrictions in 'narrative_obj'
 narrative_sample <- function(model, narrative_obj, 
-                             N = nrow(model$output$APB_sample)) {
+                             N = nrow(model$output$APB_sample),
+                             gaussian = FALSE) {
   
-  APB_post <- model$output$APB_sample
+  if(gaussian == FALSE) APB_post <- model$output$APB_sample
+  if(gaussian == TRUE) APB_post <- model$output$APB_sample_gaussian
   xy <- model$args$xy
   
   xx <- xy$xx
@@ -199,7 +205,8 @@ narrative_sample <- function(model, narrative_obj,
       
       #Calculate the importance weight
       E <- eFun(param = APB_post[i,], xx = xx, yy = yy)
-      iw <- importanceWeight(H_objects = H_objects, narrative_obj = narrative_obj, E = E, xy = xy, n = 1000)
+      iw <- importanceWeight(H_objects = H_objects, narrative_obj = narrative_obj, 
+                             E = E, xy = xy, n = 1000, gaussian = gaussian)
       acceptedSample <- rbind(acceptedSample, 
                               c(APB_post[i,], iw))
     }
@@ -239,6 +246,8 @@ narrative_sample <- function(model, narrative_obj,
   
   colnames(newSample) <- colnames(APB_post)
   ret <- list(newSample = newSample, acceptedSample = acceptedSample)
-  model$output$APB_sample_narrative <- ret
+  if(gaussian == FALSE) model$output$APB_sample_narrative <- ret
+  if(gaussian == TRUE) model$output$APB_sample_gaussian_narrative <- ret
+  
   model
 }

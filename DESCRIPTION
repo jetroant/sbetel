@@ -12,7 +12,8 @@ Imports:
     mvtnorm,
     gmm,
     sandwich,
-    expm
+    expm,
+    MCMCpack
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.0.1
 Encoding: UTF-8
