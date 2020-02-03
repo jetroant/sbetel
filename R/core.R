@@ -89,9 +89,9 @@ init_sbetel <- function(g = "var",
     Sigma <- t(yy - xx %*% OLS_est) %*% (yy - xx %*% OLS_est)/ nrow(yy)
     cross_xx_inv <- chol2inv( chol (crossprod(xx)))
     OLS_cov <- kronecker(Sigma, cross_xx_inv)
-    if(args$sigma == TRUE) {
+    if(args$sigma == TRUE & is.null(initial$th)) {
       initial$th <- c(OLS_est, t(chol(Sigma))[!upper.tri(Sigma)])
-    } else {
+    } else if(is.null(initial$th)) {
       initial$th <- c(OLS_est)
     }
     
@@ -106,7 +106,7 @@ init_sbetel <- function(g = "var",
   
   #Parameter covariance matrix from GMM for RWMH algorithm to use
   #(if not provided by user)
-  if(is.null(initial$cov)) {
+  if(is.null(initial$cov) | !is.null(args$moment_conditions)) {
     g_gmm <- function(th, x) {
       g(th = th, y = y, args = args)
     }
@@ -138,6 +138,24 @@ init_sbetel <- function(g = "var",
                 args = args,
                 initial = initial,
                 type = type)
+  
+  #Finally, in case of additional moment conditions, 
+  #feasibility of the initial parameter values must be checked
+  if(!is.null(args$moment_conditions)) {
+    init_like <- eval_sbetel(initial$th, model)
+    init_like_gmm <- eval_sbetel(gmm_model$coefficients, model)
+    if(init_like_gmm > init_like) {
+      model$initial$th <- gmm_model$coefficients
+      cat("gmm estimates chosen as initial parameter values. \n")
+    } else {
+      if(init_like == -Inf) {
+        stop("No feasible initial parameter values found. This suggests that the chosen moment conditions are very unlikely to hold or that there is not enough data for identification. You can also try to specify initial starting values yourself.")
+      } else {
+        cat("ols estimates chosen as initial parameter values. \n")
+      }
+    }
+    
+  }
   
   model
 }
