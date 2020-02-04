@@ -38,10 +38,14 @@
 init_sbetel <- function(g = "var",
                         y,
                         bw = "auto",
-                        args = list(),
-                        initial = list(th = NULL, cov = NULL),
+                        args = list(sigma = TRUE,
+                                    gmm = FALSE),
+                        initial = list(th = NULL, 
+                                       cov = NULL),
                         verbose = TRUE
                         ) {
+  
+  if(is.null(args$gmm)) args$gmm <- FALSE
   
   if(is.character(g)) {
     
@@ -104,15 +108,33 @@ init_sbetel <- function(g = "var",
     
   }
   
-  #Parameter covariance matrix from GMM for RWMH algorithm to use
+  #Parameter covariance matrix from GMM or OLS+bootstrap for RWMH algorithm to use
   #(if not provided by user)
   if(is.null(initial$cov) | !is.null(args$moment_conditions)) {
-    g_gmm <- function(th, x) {
-      g(th = th, y = y, args = args)
+    
+    if(type != "var" | args$gmm == TRUE) {
+      g_gmm <- function(th, x) {
+        g(th = th, y = y, args = args)
+      }
+      if(verbose == TRUE) cat("Estimating GMM model for initial values... \n")
+      gmm_model <- gmm::gmm(g_gmm, y, t0 = initial$th, type = "twoStep", 
+                            wmatrix = "optimal", optfct = "nlminb", vcov = "HAC")
+      initial$cov <- gmm_model$vcov
+      if(args$gmm == TRUE) initial$th <- gmm_model$coefficients
+      
+    } else {
+      boot_n <- 1000
+      temp <- matrix(NA, nrow = boot_n, ncol = length(initial$th) - length(OLS_est))
+      u <- yy - xx %*% OLS_est
+      for(i in 1:boot_n) {
+        u_booted <- u[sample.int(nrow(u), nrow(u), replace = TRUE),]
+        Sigma_booted <- crossprod(u_booted) / nrow(u_booted)
+        temp[i,] <- t(chol(Sigma_booted))[!upper.tri(Sigma_booted)]
+      }
+      P_cov <- diag(apply(temp, 2, var))
+      initial$cov <- rbind(cbind(OLS_cov, matrix(0, ncol = ncol(P_cov), nrow = nrow(OLS_cov))),
+                           cbind(matrix(0, ncol = ncol(OLS_cov), nrow = nrow(P_cov)), P_cov))
     }
-    gmm_model <- gmm::gmm(g_gmm, y, t0 = initial$th, type = "twoStep", 
-                          wmatrix = "ident", optfct = "nlminb")
-    initial$cov <- gmm_model$vcov
   }
   
   #Check for computational singularity of the initial covariance matrix
@@ -127,7 +149,13 @@ init_sbetel <- function(g = "var",
   
   #Chooses the bandwidth parameter for smoothing
   if(bw == "auto") {
-    bw <- sandwich::bwAndrews(gmm_model, kernel = "Bartlett", prewhite = 0)
+    g_gmm <- function(th, x) {
+      g(th = th, y = y, args = args)
+    }
+    if(verbose == TRUE) cat("Choosing the optimal bandwidth parameter... \n")
+    gmm_fs <- gmm::gmm(g_gmm, y, t0 = initial$th, type = "twoStep", 
+                       wmatrix = "ident", optfct = "nlminb")
+    bw <- sandwich::bwAndrews(gmm_fs, kernel = "Bartlett", prewhite = 0)
     bw <- floor(bw/2)
   }
   
@@ -139,22 +167,40 @@ init_sbetel <- function(g = "var",
                 initial = initial,
                 type = type)
   
-  #Finally, in case of additional moment conditions, 
-  #feasibility of the initial parameter values must be checked
+  #Finally, especially in case of additional moment conditions, 
+  #feasibility/optimality of the initial parameter values must be checked
   if(!is.null(args$moment_conditions)) {
-    init_like <- eval_sbetel(initial$th, model)
-    init_like_gmm <- eval_sbetel(gmm_model$coefficients, model)
-    if(init_like_gmm > init_like) {
-      model$initial$th <- gmm_model$coefficients
-      cat("gmm estimates chosen as initial parameter values. \n")
-    } else {
-      if(init_like == -Inf) {
-        stop("No feasible initial parameter values found. This suggests that the chosen moment conditions are very unlikely to hold or that there is not enough data for identification. You can also try to specify initial starting values yourself.")
-      } else {
-        cat("ols estimates chosen as initial parameter values. \n")
-      }
-    }
     
+    #Evaluate the likelihood at initial values
+    init_like <- eval_sbetel(initial$th, model)
+    
+    #Potentially optimal initial values are searched for with a 'marginal gmm'
+    initial_fixed <- initial$th[1:length(OLS_est)]
+    initial_not_fixed <- initial$th[-c(1:length(OLS_est))]
+    g_obj <- function(th) {
+      gs <- g(th = c(initial_fixed, th), y = y, args = args)[,-c(1:length(initial$th))]
+      gs_mean <- apply(gs, 2, mean)
+      gs_mean %*% diag(length(gs_mean)) %*% gs_mean
+    }
+    opt <- nlminb(start = initial_not_fixed, objective = g_obj)
+    new_initial <- c(initial_fixed, opt$par)
+    
+    #Evaluate new initial likelihood
+    init_like_new <- eval_sbetel(new_initial, model)
+    
+    #Check the optimality of the initial values
+    if(init_like_new > init_like) {
+      initial$th <- new_initial
+      if(verbose == TRUE) cat("Optimal initial parameter values found with 'marginal gmm'. \n")
+    }
+  }
+  
+  #Evaluate the likelihood at final initial values
+  init_like <- eval_sbetel(initial$th, model)
+  
+  #Check the feasibility of the initial values
+  if(init_like == -Inf) {
+    stop("No feasible initial parameter values found. This suggests either that (i) the specified model is not supported by the data, (ii) there is not enough data for identification or (iii) the initial parameter values are poorly chosen.")
   }
   
   model
@@ -220,7 +266,8 @@ est_sbetel <- function(model,
                        burn = NULL,
                        n = 100,
                        verbose = TRUE,
-                       backup = NULL) {
+                       backup = NULL,
+                       chain_name = 0) {
   
   #Choosing the tuning parameter for suitable step size
   if(tune == "auto") {
@@ -271,7 +318,7 @@ est_sbetel <- function(model,
     if(verbose == TRUE) setTxtProgressBar(pb, i)
     
     if(!is.null(backup)) {
-      if(i %% backup == 0) saveRDS(list(mat, likelihoods), paste0("sbetel_chain_", Sys.Date(), ".rds"))
+      if(i %% backup == 0) saveRDS(list(mat, likelihoods), paste0("sbetel_chain_", chain_name, "_", Sys.Date(), ".rds"))
     } 
   }
   if(verbose == TRUE) close(pb)

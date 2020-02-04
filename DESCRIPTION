@@ -13,7 +13,8 @@ Imports:
     gmm,
     sandwich,
     expm,
-    MCMCpack
+    MCMCpack,
+    parallel
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.0.1
 Encoding: UTF-8
