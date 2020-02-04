@@ -172,7 +172,7 @@ init_sbetel <- function(g = "var",
   if(!is.null(args$moment_conditions)) {
     
     #Evaluate the likelihood at initial values
-    init_like <- eval_sbetel(initial$th, model)
+    init_like <- eval_sbetel(model$initial$th, model)
     
     #Potentially optimal initial values are searched for with a 'marginal gmm'
     initial_fixed <- initial$th[1:length(OLS_est)]
@@ -190,13 +190,13 @@ init_sbetel <- function(g = "var",
     
     #Check the optimality of the initial values
     if(init_like_new > init_like) {
-      initial$th <- new_initial
+      model$initial$th <- new_initial
       if(verbose == TRUE) cat("Optimal initial parameter values found with 'marginal gmm'. \n")
     }
   }
   
   #Evaluate the likelihood at final initial values
-  init_like <- eval_sbetel(initial$th, model)
+  init_like <- eval_sbetel(model$initial$th, model)
   
   #Check the feasibility of the initial values
   if(init_like == -Inf) {
