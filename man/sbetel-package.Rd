@@ -23,6 +23,3 @@ Maintainer: \packageMaintainer{sbetel}
 \seealso{
   ...
 }
-\examples{
-  ...
-}
