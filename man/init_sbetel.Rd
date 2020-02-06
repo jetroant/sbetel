@@ -58,7 +58,7 @@ a list that defines the model and that can be passed on either to \code{eval_sbe
 TBA
 }
 \examples{
-set.seed(222)
-y <- matrix(rnorm(120), ncol = 3)
+\dontrun{
 model <- init_sbetel(g = "var", y = y)
+}
 }

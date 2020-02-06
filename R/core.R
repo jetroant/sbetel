@@ -33,9 +33,9 @@
 #' and can be passed on to \code{eval_sbetel()} or \code{est_sbetel()}.
 #' @details TBA
 #' @examples
-#' set.seed(222)
-#' y <- matrix(rnorm(120), ncol = 3)
+#'\dontrun{
 #' model <- init_sbetel(g = "var", y = y)
+#'}
 #' @export
 init_sbetel <- function(g = "var",
                         y,
@@ -220,10 +220,9 @@ init_sbetel <- function(g = "var",
 #' @return \code{eval_sbetel()} returns a numerical value that is the unnormalized
 #' posterior density at \code{th}.
 #' @examples
-#' set.seed(222)
-#' y <- matrix(rnorm(120), ncol = 3)
-#' model <- init_sbetel(g = "var", y = y)
+#'\dontrun{
 #' eval_sbetel(th = model$initial$th, model = model)
+#'}
 #' @export
 eval_sbetel <- function(th, model, itermax = 20) {
   if(model$type == "var") {
@@ -262,10 +261,9 @@ eval_sbetel <- function(th, model, itermax = 20) {
 #' RWMH algorithm.
 #' @details TBA
 #' @examples
-#' set.seed(222)
-#' y <- matrix(rnorm(120), ncol = 3)
-#' model <- init_sbetel(g = "var", y = y)
+#' \dontrun{
 #' model_output <- est_sbetel(model = model, N = 1000)
+#' }
 #' @export
 est_sbetel <- function(model,
                        N,

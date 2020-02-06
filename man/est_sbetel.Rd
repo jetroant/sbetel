@@ -49,8 +49,7 @@ from the parameter posterior distribution with a RWMH algorithm.
 TBA
 }
 \examples{
-set.seed(222)
-y <- matrix(rnorm(120), ncol = 3)
-model <- init_sbetel(g = "var", y = y)
+\dontrun{
 model_output <- est_sbetel(model = model, N = 1000)
+}
 }
