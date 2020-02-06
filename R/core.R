@@ -1,3 +1,5 @@
+#'@useDynLib sbetel, .registration = TRUE
+#'@importFrom Rcpp evalCpp
 
 #' @title Initialize a smoothed BETEL model
 #' @description Initialize a smoothed BETEL model by providing the model defining 
