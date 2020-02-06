@@ -98,3 +98,8 @@ stackA <- function(A) {
   A
 }
 
+#For picking the time indices for narrative restrictions
+pick_indices <- function(y_ts) cbind(y_ts, 1:nrow(y_ts))[,-c(1:ncol(y_ts))]
+
+
+
