@@ -8,11 +8,11 @@ shrinkage_selector <- function(y, p, stat = rep(0, ncol(y)), additional_priors =
     xx <- xy$xx
     yy <- xy$yy
     errors <- matrix(NA, ncol = ncol(yy), nrow = nrow(yy))
-    for(i in (1+xy$td):nrow(yy)) {
+    for(i in (1+td):nrow(yy)) {
       OLS_est <- chol2inv(chol(crossprod(xx[-i,]))) %*% t(xx[-i,]) %*% yy[-i,]
       errors[i,] <-  xx[i,] %*% OLS_est - yy[i,]
     }
-    if(xy$td != 0) errors <- errors[-c(1:xy$td),]; yy <- yy[-c(1:xy$td),]
+    if(td != 0) errors <- errors[-c(1:td),]; yy <- yy[-c(1:td),]
     mse <- apply(errors^2, 2, mean)
     weights <- diag(apply(yy, 2, var)^(-1))
     mse %*% weights %*% mse

@@ -68,10 +68,10 @@ init_sbetel <- function(g = "var",
       if(max(p_grid) > 13) p_grid <- 1:13
       if(min(p_grid) == 0) p_grid <- 1
     } else {
-      p_grid <- p
+      p_grid <- args$p
     }
     fixed <- NULL
-    if(!is.null(args$lambda)) fixed <- lambda
+    if(!is.null(args$lambda)) fixed <- args$lambda
     objective <- Inf
     for(i in p_grid) {
       opt <- shrinkage_selector(y = y, 
@@ -90,6 +90,7 @@ init_sbetel <- function(g = "var",
     
     #OLS estimates as initial parameter values
     xy <- build_xy(y, p = args$p, lambda = args$lambda, stat = args$stat)
+    if(is.null(xy$td)) xy$td <- 0
     args$xy <- xy
     xx <- xy$xx
     yy <- xy$yy
