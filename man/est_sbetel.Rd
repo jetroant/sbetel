@@ -11,7 +11,9 @@ est_sbetel(
   itermax = 20,
   burn = NULL,
   n = 100,
-  verbose = TRUE
+  verbose = TRUE,
+  backup = NULL,
+  chain_name = 0
 )
 }
 \arguments{

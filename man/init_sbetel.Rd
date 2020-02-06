@@ -8,7 +8,7 @@ init_sbetel(
   g = "var",
   y,
   bw = "auto",
-  args = list(),
+  args = list(sigma = TRUE, gmm = FALSE),
   initial = list(th = NULL, cov = NULL),
   verbose = TRUE
 )
@@ -34,7 +34,7 @@ If \code{g = "var"} is chosen, this can be left undefined in which case the
 parameters of the var model are automatically chosen to minimize the 
 out-of-sample squared forecasting errors of the model. For example, the lag 
 length and the shrinkage parameter can be manually fixed by defining 
-\code{args = list(p = 5, lambda = 0.2)}. The Cholesky decomposition of the covariance matrix of the errors is estimated by setting \code{args = list(sigma = TRUE)}. For more, see details.}
+\code{args = list(p = 5, lambda = 0.2)}. For more, see details.}
 
 \item{initial}{A list of initial parameter values that defaults to 
 \code{list(th = NULL, cov = NULL)}. At least \code{initial$th} must be predefined, 
