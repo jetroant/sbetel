@@ -109,15 +109,15 @@ H_accept <- function(H_obj, narrative) {
 }
 
 #util for 'narrative_sample()' 5/5
-importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000, gaussian = FALSE) {
+importanceWeight <- function(H_objects, narrative_obj, E, xy, n = 1000, p = p, gaussian = FALSE) {
   
   yy <- xy$yy
   td <- ifelse(is.null(xy$td), 0, xy$td)
   
   #Periods for which shocks are resampled
   periods <- c()
-  for(i in 1:length(narrative_obj$periods)) periods <- c(periods, narrative_obj$periods[[i]] + td)
-  periods <- which(c(1:nrow(E)) %in% periods) + td
+  for(i in 1:length(narrative_obj$periods)) periods <- c(periods, narrative_obj$periods[[i]] + td - p)
+  periods <- which(c(1:nrow(E)) %in% periods)
   
   E_new <- E
   avec <- rep(TRUE, n)
@@ -174,10 +174,10 @@ narrative_sample <- function(model, narrative_obj,
   if(gaussian == FALSE) APB_post <- model$output$APB_sample
   if(gaussian == TRUE) APB_post <- model$output$APB_sample_gaussian
   xy <- model$args$xy
-  
   xx <- xy$xx
   yy <- xy$yy
   td <- ifelse(is.null(xy$td), 0, xy$td)
+  p <- model$args$p
   
   acceptedSample <- matrix(c(APB_post[1,], NA), nrow = 1)
   acceptedSample[1,] <- NA
@@ -194,7 +194,7 @@ narrative_sample <- function(model, narrative_obj,
     for(j in 1:length(narrative_obj$restrictions)) {
       
       H_objects[[j]] <- histDecomp(variable = narrative_obj$variables[[j]], 
-                                   periods = narrative_obj$periods[[j]] + td, 
+                                   periods = narrative_obj$periods[[j]] + td - p, 
                                    param = APB_post[i,], 
                                    xx = xx, 
                                    yy = yy)
@@ -206,7 +206,7 @@ narrative_sample <- function(model, narrative_obj,
       #Calculate the importance weight
       E <- eFun(param = APB_post[i,], xx = xx, yy = yy)
       iw <- importanceWeight(H_objects = H_objects, narrative_obj = narrative_obj, 
-                             E = E, xy = xy, n = 1000, gaussian = gaussian)
+                             E = E, xy = xy, n = 1000, p = p, gaussian = gaussian)
       acceptedSample <- rbind(acceptedSample, 
                               c(APB_post[i,], iw))
     }
