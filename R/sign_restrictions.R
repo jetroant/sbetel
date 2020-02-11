@@ -105,7 +105,7 @@ B_signres_sample <- function(model,
     if(verbose == TRUE) setTxtProgressBar(pb, i)
     
     if(!is.null(backup)) {
-      if(i %% backup == 0) saveRDS(list(mat, likelihoods), paste0("sbetel_signres_sample_", core_number, "_", Sys.Date(), ".rds"))
+      if(i %% backup == 0) saveRDS(APB_post, paste0("sbetel_signres_sample_", core_number, "_", Sys.Date(), ".rds"))
     } 
   }
   if(verbose == TRUE) close(pb)
