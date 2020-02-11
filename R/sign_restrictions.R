@@ -68,7 +68,14 @@ PQ_try <- function(P, res, perms = permutations(ncol(P)), additional = FALSE) {
 #Generates a sample (of size 'N') from the posterior P(A,P,B|Y) given 
 #a sample from P(A,P|Y) and the sign restrictions in 'res'
 #(ADD DOCUMENTATION)
-B_signres_sample <- function(model, res, N, additional = FALSE, gaussian = FALSE) {
+B_signres_sample <- function(model, 
+                             res, 
+                             N, 
+                             additional = FALSE, 
+                             gaussian = FALSE,
+                             verbose = TRUE,
+                             backup = NULL,
+                             core_number = 0) {
   
   shocks <- ncol(model$y)
   AP_post <- model$output$sample
@@ -81,7 +88,7 @@ B_signres_sample <- function(model, res, N, additional = FALSE, gaussian = FALSE
                           paste0("P_", 1:ncol(P_post)), 
                           paste0("B_", 1:(shocks^2)))
   
-  pb <- txtProgressBar(min = 0, max = N, style = 3)
+  if(verbose == TRUE) pb <- txtProgressBar(min = 0, max = N, style = 3)
   for(i in 1:N) {
     
     PQ <- NULL
@@ -95,9 +102,13 @@ B_signres_sample <- function(model, res, N, additional = FALSE, gaussian = FALSE
     APB_post[i,1:ncol(A_post)] <- A_post[post_index,]
     APB_post[i,(ncol(A_post)+1):(ncol(A_post)+ncol(P_post))] <- P_post[post_index,]
     APB_post[i,(ncol(A_post)+ncol(P_post)+1):ncol(APB_post)] <- c(PQ)
-    setTxtProgressBar(pb, i)
+    if(verbose == TRUE) setTxtProgressBar(pb, i)
+    
+    if(!is.null(backup)) {
+      if(i %% backup == 0) saveRDS(list(mat, likelihoods), paste0("sbetel_signres_sample_", core_number, "_", Sys.Date(), ".rds"))
+    } 
   }
-  close(pb)
+  if(verbose == TRUE) close(pb)
   
   if(gaussian == TRUE) model$output$APB_sample_gaussian <- APB_post
   if(gaussian == FALSE) model$output$APB_sample <- APB_post

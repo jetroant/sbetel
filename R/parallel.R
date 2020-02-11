@@ -55,5 +55,50 @@ est_sbetel_parallel <- function(model,
   model
 }
 
+#ADD DOCUMENTATION
+B_signres_sample_parallel <- function(model,
+                                      res,
+                                      cores = parallel::detectCores() - 1,
+                                      N,
+                                      additional, 
+                                      gaussian = FALSE,
+                                      backup = 100) {
+  
+  #Initiate cluster
+  cl <- parallel::makeCluster(cores)
+  
+  #Export the needed objects/arguments
+  parallel::clusterExport(cl, list("model", "N", "res", "additional", "gaussian", "backup"),
+                          envir = environment())
+  
+  #Run parallel chains
+  model_copies <- parallel::parLapply(cl,
+                                      1:cores,
+                                      function(core_number) {
+                                        sbetel:::B_signres_sample(model = model, 
+                                                                  res = res, 
+                                                                  N = N,
+                                                                  additional = additional,
+                                                                  gaussian = gaussian,
+                                                                  verbose = FALSE,
+                                                                  backup = backup,
+                                                                  core_number = core_number
+                                                                  )
+                                      })
+  
+  parallel::stopCluster(cl)
+  
+  #Collect the samples
+  for(i in 1:cores) {
+    if(i == 1) {
+      all_samples <-  model_copies[[i]]$output$APB_sample
+    } else {
+      all_samples <- rbind(all_samples, model_copies[[i]]$output$APB_sample)
+    }
+  }
+  model$output$APB_sample <- all_samples
+  
+  model
+}
 
 
