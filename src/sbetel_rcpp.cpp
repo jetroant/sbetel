@@ -8,7 +8,7 @@ using namespace Rcpp;
 List test_rcpp(List l) {
   return l;
 }
- 
+
 NumericMatrix smooth_rcpp(NumericMatrix gMat, int bw, int td) {
   
   double scale = (1.0/(2.0*bw+1.0));
@@ -117,10 +117,12 @@ NumericVector laGrangian_rcpp(NumericMatrix gMat, int itermax, double tol = 1e-1
     //Newton step
     arma::mat J_arma = as<arma::mat>(J);
     arma::vec d1_arma = as<arma::vec>(d1);
-    if(J_arma.is_sympd() == 0) {
-      NumericVector empty;
-      return empty;
-    }
+    
+    //Bug found in this check! Disabled for now.
+    //if(J_arma.is_sympd() == 0) {
+    //  NumericVector empty;
+    //  return empty;
+    //}
     eta_arma = eta_arma - arma::inv_sympd(J_arma) * d1_arma;
     
     double diff_norm_arma = arma::norm(eta_arma - eta_last);
