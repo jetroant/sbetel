@@ -1,38 +1,17 @@
 
-#Selects optimal shrinkage for BVAR with minnesota prior
-shrinkage_selector <- function(y, p, stat = rep(0, ncol(y)), additional_priors = NULL, fixed = NULL) {
+#Approximates efficient step size for RWMH algortihm,
+#mimicking the manual tuning process.
+#Gets you in the right ballpark.
+auto_tune <- function(model,
+                      type,
+                      target = c(0.22, 0.28), 
+                      limit = 20, 
+                      chain_length = 100, 
+                      verbose = TRUE) {
   
-  toMin <- function(lambda) {
-    xy <- build_xy(y, p, lambda = lambda, stat = stat, additional_priors = additional_priors)
-    td <- ifelse(is.null(xy$td), 0, xy$td)
-    xx <- xy$xx
-    yy <- xy$yy
-    errors <- matrix(NA, ncol = ncol(yy), nrow = nrow(yy))
-    for(i in (1+td):nrow(yy)) {
-      OLS_est <- chol2inv(chol(crossprod(xx[-i,]))) %*% t(xx[-i,]) %*% yy[-i,]
-      errors[i,] <-  xx[i,] %*% OLS_est - yy[i,]
-    }
-    if(td != 0) errors <- errors[-c(1:td),]; yy <- yy[-c(1:td),]
-    mse <- apply(errors^2, 2, mean)
-    weights <- diag(apply(yy, 2, var)^(-1))
-    mse %*% weights %*% mse
-  }
-  
-  if(is.null(fixed)) {
-    opt <- optimize(toMin, c(0.01, 10))
-    return(opt)
-  } else {
-    return(list(minimum = fixed, objective = toMin(fixed)))
-  }
-}
-
-#Approximates an efficient step size for RWMH algortihm,
-#mimicing the manual tuning process
-auto_tune <- function(model, target = c(0.22, 0.28), 
-                      limit = 20, n = 100, verbose = TRUE) {
   if(verbose == TRUE) cat(paste0("Auto tuning step size... \n"))
   found <- FALSE
-  tune <- 2.38^2/length(model$initial$th)
+  tune <- 2.38^2/length(model$initial(model$args$xy)$th)
   step <- 0.1
   direction <- c()
   while(found == FALSE) {
@@ -40,14 +19,22 @@ auto_tune <- function(model, target = c(0.22, 0.28),
     #Autotune fails if limit is reached
     if(length(direction) > limit) stop("Autotune failed. Limit reached.")
     
-    s <- est_sbetel(model, N = n, tune = tune, verbose = FALSE)
-    if(s$output$accrate > target[2]) {
+    s <- est_sbetel(model,
+                    chain_length = chain_length,
+                    chain_number = 1,
+                    tune = tune,
+                    burn = 0,
+                    parallel = 1,
+                    verbose = FALSE)
+    if(verbose == TRUE) cat(paste0("tune = ", round(tune, 4), " / accrate = ", round(s$accrates, 2), "\n"))
+    
+    if(s$accrates > target[2]) {
       
       #Step size halves if the direction of the search changes
       direction <- c(1, direction)
       if(length(direction) != 1 & direction[1] == -direction[2]) step <- step/2
       tune <- tune + step
-    } else if(s$output$accrate < target[1]) {
+    } else if(s$accrates < target[1]) {
       
       #Step size halves if the direction of the search changes
       direction <- c(-1, direction)
@@ -61,14 +48,19 @@ auto_tune <- function(model, target = c(0.22, 0.28),
     } else {
       
       #Parameter is accepted if 'accrate' is still within the target
-      s <- est_sbetel(model, N = 100, tune = tune, verbose = FALSE)
-      if(s$output$accrate > target[1] & s$output$accrate < target[2]) {
+      s <- est_sbetel(model,
+                      chain_length = chain_length,
+                      chain_number = 1,
+                      tune = tune,
+                      burn = 0,
+                      parallel = 1,
+                      verbose = FALSE)
+      if(s$accrates > target[1] & s$accrates < target[2]) {
         found <- TRUE
       }
     }
   }
   
-  if(verbose == TRUE) cat(paste0("Autotune: 'tune' = ", tune, " / 'accrate' ~ ", round(s$output$accrate, 2), " / 'n' = ", n, "\n"))
-  list(accrate = s$output$accrate, tune = tune, iters = length(direction))
+  list(accrate = s$accrates, tune = tune, iters = length(direction))
 }
 

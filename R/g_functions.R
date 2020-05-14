@@ -1,6 +1,36 @@
 
 g_var <- function(th, y, args) {
   
+  n <- ncol(y)
+  p <- args$p
+  xx <- args$xy$xx
+  yy <- args$xy$yy
+  
+  if(args$constant == TRUE) {
+    block1 <- matrix(NA, ncol = (n^2)*p+n, nrow = nrow(xx))
+    u <- matrix(NA, ncol = n, nrow = nrow(xx))
+    for(i in 1:n) {
+      th_indices <- (i*(n*p+1)-(n*p+1)+1):(i*(n*p+1))
+      u[,i] <- as.numeric(yy[,i] - xx %*% th[th_indices])
+      block1[,th_indices] <- xx * u[,i]
+    }
+    
+  } else {
+    block1 <- matrix(NA, ncol = (n^2)*p, nrow = nrow(xx))
+    u <- matrix(NA, ncol = n, nrow = nrow(xx))
+    for(i in 1:n) {
+      th_indices <- ((i*(n*p))-n*p+1):(i*(n*p))
+      u[,i] <- as.numeric(yy[,i] - xx %*% th[th_indices])
+      block1[,th_indices] <- xx * u[,i]
+    }
+  }
+
+  block1
+}
+
+#NOT READY
+g_svar <- function(th, y, args) {
+  
   p <- args$p
   lambda <- args$lambda
   stat <- args$stat

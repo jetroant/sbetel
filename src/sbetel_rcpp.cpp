@@ -4,11 +4,6 @@
 
 using namespace Rcpp;
 
-// [[Rcpp::export]]
-List test_rcpp(List l) {
-  return l;
-}
-
 NumericMatrix smooth_rcpp(NumericMatrix gMat, int bw, int td) {
   
   double scale = (1.0/(2.0*bw+1.0));
@@ -57,7 +52,6 @@ NumericMatrix smooth_rcpp(NumericMatrix gMat, int bw, int td) {
         count ++;
       }
       
-      //HOX scale
       gMat_new(i-1+td,j) = sum(subvec) * scale;
       
     }
@@ -94,7 +88,7 @@ NumericVector laGrangian_rcpp(NumericMatrix gMat, int itermax, double tol = 1e-1
       d1[j] = as<double>(wrap(arma::mean(temp1_col_arma)));
     }
     
-    //Second derivative
+    //Second derivative (Jacobian)
     NumericMatrix temp2(nc*nc,t);
     for(int j = 0; j < t; j++) {
       NumericVector gMat_row = gMat(j,_);
@@ -140,40 +134,6 @@ NumericVector laGrangian_rcpp(NumericMatrix gMat, int itermax, double tol = 1e-1
   eta = as<NumericVector>(wrap(eta_arma));
   return eta;
 }
-
-/*
-// [[Rcpp::export]]
-double etel_rcpp(NumericVector th, 
-                 Function g, 
-                 int p, 
-                 NumericMatrix y, 
-                 int itermax, 
-                 int bw, 
-                 double lambda, 
-                 int td) {
-  
-  NumericMatrix gMat = g(th, y, p, lambda);
-  NumericMatrix gMat_smooth = smooth_rcpp(gMat, bw, td);
-  NumericVector lambdaHat = laGrangian_rcpp(gMat_smooth, itermax);
-  
-  if(lambdaHat.size() == 0) {
-    return R_NegInf;
-  }
-  
-  arma::vec lambdaHat_arma = as<arma::vec>(lambdaHat);
-  arma::mat gMat_smooth_arma = as<arma::mat>(gMat_smooth);
-  arma::vec p1 = gMat_smooth_arma * lambdaHat_arma;
-  
-  //LogSumExp
-  double maxx = max(as<NumericVector>(wrap(p1)));
-  arma::vec expp = arma::exp(p1 - maxx);
-  double summ = arma::sum(expp);
-  double p2 = log(summ) + maxx;
-
-  double ret = as<double>(wrap(arma::sum(p1 - p2)));
-  return ret;
-}
-*/
 
 // [[Rcpp::export]]
 double etel_rcpp(NumericVector th, 

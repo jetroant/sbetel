@@ -1,8 +1,8 @@
 Package: sbetel
 Type: Package
 Title: Estimation of moment condition models with smoothed BETEL
-Version: 0.1-2
-Date: 2019-12-06
+Version: 0.2-0
+Date: 2020-14-05
 Author: Jetro Anttonen <jetro.a@gmail.com>
 Maintainer: Jetro Anttonen <jetro.a@gmail.com>
 Description: Estimation of moment condition models with smoothed Bayesian exponentially
@@ -12,8 +12,6 @@ Imports:
     mvtnorm,
     gmm,
     sandwich,
-    expm,
-    MCMCpack,
     parallel
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.0.1

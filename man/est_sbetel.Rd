@@ -6,50 +6,64 @@
 \usage{
 est_sbetel(
   model,
-  N,
-  tune = "auto",
+  chain_length = 100,
+  chain_number = 1,
+  tune,
+  type = c("posterior", "likelihood", "prior")[1],
+  burn = 50,
+  parallel = 1,
   itermax = 20,
-  burn = NULL,
-  n = 100,
-  verbose = TRUE,
   backup = NULL,
-  chain_name = 0
+  verbose = TRUE
 )
 }
 \arguments{
 \item{model}{A list returned by \code{init_sbetel()} defining the model.}
 
-\item{N}{Number of draws from the posterior distribution.}
+\item{chain_length}{The length of one subchain.}
+
+\item{chain_number}{The number of subchains. The total (not independent) 
+size of the sample equals \code{chain_length x chain_number}.}
 
 \item{tune}{A parameter that controls the step size of the RWMH algorithm.
-Defaults to \code{"auto"} in which case sufficiently efficient parameter value
-is automatically chosen by mimicking the manual tuning process with \code{N = n}.
-Causion is advised when using this default setting.}
+Should be chosen to accomplish an acceptance rate of approximately 20-25%. 
+\code{sbetel:::auto_tune(model, type = "posterior")} might be of help.}
+
+\item{type}{Should be either "posterior", "likelihood" or "prior". 
+Defaults to "posterior".}
+
+\item{burn}{The length of the burn-in period. Should be enough for correlation 
+of the subchain from its initial value to vanish.}
+
+\item{parallel}{Specifies the number of logical processors used for parallel 
+processing of the subchains. Defaults to 1 in which case no parallel processing 
+is used. \code{parallel::detectCores()} can be used to find out the number 
+of logical processors on your machine.}
 
 \item{itermax}{Maximum number of Newton-Rhapson iterations within the evaluation 
-of the likelihood. Defaults to \code{itermax = 20}.}
+of the likelihood. Defaults to 20 which should be more than enough.}
 
-\item{burn}{\code{NULL} or numerical value \code{> 0}. The length of the 
-burn-in sample. Defaults to \code{NULL} in which case there is no burn-in.}
-
-\item{n}{Only used if \code{tune = "auto"}. The number of draws used for auto tuning the 
-step size. Defaults to \code{n = 100}.}
+\item{backup}{\code{NULL} or a character string that names the directory in which the 
+backups of the subchains are saved as they are completed. Defaults to \code{NULL} 
+in which case no backups are created.}
 
 \item{verbose}{Logical. Defaults to \code{TRUE} in which case messages are produced.}
 }
 \value{
-\code{est_sbetel()} returns a list containing the model and the output of the 
+\code{est_sbetel()} returns a list containing the output of the 
 RWMH algorithm.
 }
 \description{
 Estimate a smoothed BETEL model by generating a sample
-from the parameter posterior distribution with a RWMH algorithm.
+from the parameter posterior density with a RWMH algorithm. Subchains 
+are used for integrating over the stochastic prior defined by the prior 
+data generating process \code{prior_fun()}.
 }
 \details{
 TBA
 }
 \examples{
 \dontrun{
-model_output <- est_sbetel(model = model, N = 1000)
+output <- est_sbetel(model, tune = 0.1)
 }
 }

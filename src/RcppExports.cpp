@@ -6,17 +6,6 @@
 
 using namespace Rcpp;
 
-// test_rcpp
-List test_rcpp(List l);
-RcppExport SEXP _sbetel_test_rcpp(SEXP lSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type l(lSEXP);
-    rcpp_result_gen = Rcpp::wrap(test_rcpp(l));
-    return rcpp_result_gen;
-END_RCPP
-}
 // etel_rcpp
 double etel_rcpp(NumericVector th, Function g, NumericMatrix y, int bw, int td, int itermax, List args);
 RcppExport SEXP _sbetel_etel_rcpp(SEXP thSEXP, SEXP gSEXP, SEXP ySEXP, SEXP bwSEXP, SEXP tdSEXP, SEXP itermaxSEXP, SEXP argsSEXP) {
@@ -36,7 +25,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sbetel_test_rcpp", (DL_FUNC) &_sbetel_test_rcpp, 1},
     {"_sbetel_etel_rcpp", (DL_FUNC) &_sbetel_etel_rcpp, 7},
     {NULL, NULL, 0}
 };
