@@ -117,13 +117,8 @@ NumericVector laGrangian_rcpp(NumericMatrix gMat, int itermax, double tol = 1e-1
     //Newton step
     arma::mat J_arma = as<arma::mat>(J);
     arma::vec d1_arma = as<arma::vec>(d1);
-    
-    //Bug found in this check! Disabled for now.
-    //if(J_arma.is_sympd() == 0) {
-    //  NumericVector empty;
-    //  return empty;
-    //}
-    eta_arma = eta_arma - arma::inv_sympd(J_arma) * d1_arma;
+    arma::vec direction = arma::solve(J_arma, d1_arma, arma::solve_opts::fast);
+    eta_arma = eta_arma - direction;
     
     double diff_norm_arma = arma::norm(eta_arma - eta_last);
     if(diff_norm_arma < tol) {
