@@ -26,6 +26,7 @@ run_chain <- function(chain_name,
   } else if(type == "prior") {
     xy <- model$prior_fun(model)
     model$bw <- 0
+    model$args$constant <- FALSE
     td <- 0
     
   } else if(type == "likelihood") {
