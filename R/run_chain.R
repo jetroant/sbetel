@@ -35,8 +35,9 @@ run_chain <- function(chain_name,
   }
   
   #Initial values and scale
-  initial_th <- model$initial(xy)$th
-  initial_scale <- model$initial(xy)$cov
+  init <- model$initial(xy, model$args)
+  initial_th <- init$th
+  initial_scale <- init$cov
   
   #Pre-draw RW-steps
   moves <- mvtnorm::rmvnorm(N, 

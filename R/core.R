@@ -46,8 +46,8 @@
 #'}
 #' @export
 init_sbetel <- function(y,
-                        g = "var",
-                        prior_fun = "var",
+                        g = c("var", "svar")[1],
+                        prior_fun = c("var", "svar")[1],
                         bw = "auto",
                         initial = NULL,
                         args = list(),
@@ -98,7 +98,42 @@ init_sbetel <- function(y,
       }
       
     } else if(g == "svar") {
-      stop("'svar' to be implemented...")
+      g <- sbetel:::g_svar
+      type <- "svar"
+      if(verbose == TRUE) cat("Initializing structural vectorautoregressive model (g = 'svar')... \n")
+      
+      if(is.null(args$constant)) args$constant <- TRUE
+      
+      if(is.null(args$p)) {
+        args$p <- 1
+        if(verbose == TRUE) cat("Lag length ('args$p') not selected. Defaults to 1. \n")
+      }
+      
+      args$xy <- sbetel:::build_xy_var(y, args$p)
+      
+      if(is.null(args$stat)) {
+        args$stat <- rep(0, ncol(y))
+        if(verbose == TRUE) cat("Prior mean for first own lags (args$stat) not selected. Defaults to 0. \n")
+      } 
+      args$epsilon <- rep(NA, ncol(y))
+      for(i in 1:ncol(y)) args$epsilon[i] <- sqrt(ar(y[,i], aic = F, order.max = 1)$var.pred)
+      
+      if(is.null(initial)) initial <- sbetel:::initial_svar
+      if(verbose == TRUE) cat("GMM estimates will be used as initial values. \n")
+      
+      if(bw == "auto") {
+        if(verbose == TRUE) cat("Choosing the optimal bandwidth parameter via GMM... \n")
+        bw <- initial(xy = args$xy, args = args, bw = TRUE)$bw
+        if(verbose == TRUE) cat(paste0("bw = ", bw, "\n"))
+      }
+      
+      if(is.character(prior_fun)) {
+        if(prior_fun == "svar") {
+          prior_fun <- sbetel:::prior_fun_svar
+        } else {
+          stop("For g = 'svar', 'prior_fun' needs to be either a function or a character string 'svar'.")
+        }
+      }
       
     } else {
       stop("Argument 'g' needs to be either function or character string in c('var', 'svar')")
