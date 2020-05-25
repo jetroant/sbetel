@@ -50,14 +50,21 @@ load_backup <- function(dir) {
   chain_length <- nrow(subchains[[1]]$chain)
   chain_number <- length(subchains)
   
-  #Collect the chains
+  #Collect the chains and likelihoods
   allchains <- matrix(NA, 
                       ncol = ncol(subchains[[1]]$chain),
                       nrow = chain_length*chain_number
   )
+  likelihoods <- c()
   for(i in 1:length(subchains)) {
     rows <- (i*chain_length+1):((i+1)*chain_length)-chain_length
     allchains[rows,] <- subchains[[i]]$chain
+    burn <- length(subchains[[i]]$likelihoods) - nrow(subchains[[i]]$chain)
+    if(burn > 0) {
+      likelihoods <- c(likelihoods, subchains[[i]]$likelihoods[-c(1:burn)])
+    } else {
+      likelihoods <- c(likelihoods, subchains[[i]]$likelihoods)
+    }
   }
   
   #Average acceptance rate
@@ -68,6 +75,7 @@ load_backup <- function(dir) {
   ret <- list(sample = allchains,
               subchains = subchains,
               accrates = accrates,
+              likelihoods = likelihoods,
               totaltime = NA,
               tune = NA,
               itermax = NA,
