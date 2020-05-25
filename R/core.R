@@ -236,6 +236,7 @@ est_sbetel <- function(model,
                        burn = 50,
                        parallel = 1,
                        itermax = 20,
+                       trys = 1,
                        backup = NULL,
                        verbose = TRUE) {
   
@@ -263,6 +264,7 @@ est_sbetel <- function(model,
                                            burn = burn,
                                            backup = backup,
                                            itermax = itermax,
+                                           trys = trys,
                                            progressbar = progressbar)
     }
     
@@ -274,28 +276,28 @@ est_sbetel <- function(model,
     cl <- parallel::makeCluster(parallel)
     parallel::clusterExport(cl, 
                             list("type", "model", "chain_length",
-                                 "tune", "burn", "backup",
-                                 "itermax"),
+                                 "tune", "burn", "backup", 
+                                 "trys", "itermax"),
                             envir = environment())
-    tryCatch({
-      subchains <- parallel::parLapply(cl,
-                                       1:chain_number,
-                                       function(i) {
-                                         sbetel:::run_chain(chain_name = i,
-                                                            type = type,
-                                                            model = model,
-                                                            chain_length = chain_length,
-                                                            tune = tune,
-                                                            burn = burn,
-                                                            backup = backup,
-                                                            itermax = itermax)
-                                       })
-      parallel::stopCluster(cl)
-      
+    subchains <- tryCatch({
+      parallel::parLapply(cl,
+                          1:chain_number,
+                          function(i) {
+                            sbetel:::run_chain(chain_name = i,
+                                               type = type,
+                                               model = model,
+                                               chain_length = chain_length,
+                                               tune = tune,
+                                               burn = burn,
+                                               backup = backup,
+                                               itermax = itermax,
+                                               trys = trys)
+                          })
     }, error = function(e) {
       parallel::stopCluster(cl)
       stop(e)
     })
+    parallel::stopCluster(cl)
     
   } 
   
@@ -332,6 +334,7 @@ est_sbetel <- function(model,
               totaltime = totaltime,
               tune = tune,
               itermax = itermax,
+              trys = trys,
               type = type)
   ret
 }

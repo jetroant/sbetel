@@ -7,37 +7,66 @@ run_chain <- function(chain_name,
                       burn,
                       backup,
                       itermax,
+                      trys = 1,
                       progressbar = FALSE) {
   
   #Add burn-in
   N <- chain_length + burn 
   
-  #Select type
-  if(type == "posterior") {
-    xy0 <- model$prior_fun(model)
-    xy <- model$args$xy
-    if(ncol(xy0$xx) != ncol(xy$xx)) {
-      xy0$xx <- cbind(0, xy0$xx)
+  #If initial values from GMM fall outside the support of posterior
+  #density, the prior data and initial values are regenerated
+  success <- FALSE
+  while(trys > 0) {
+    
+    #Select type
+    if(type == "posterior") {
+      xy0 <- model$prior_fun(model)
+      xy <- model$args$xy
+      if(ncol(xy0$xx) != ncol(xy$xx)) {
+        xy0$xx <- cbind(0, xy0$xx)
+      }
+      xy$xx <- rbind(xy0$xx, xy$xx)
+      xy$yy <- rbind(xy0$yy, xy$yy)
+      td <- nrow(xy0$yy)
+      
+    } else if(type == "prior") {
+      xy <- model$prior_fun(model)
+      model$bw <- 0
+      model$args$constant <- FALSE
+      td <- 0
+      
+    } else if(type == "likelihood") {
+      xy <- model$args$xy
+      td <- 0
     }
-    xy$xx <- rbind(xy0$xx, xy$xx)
-    xy$yy <- rbind(xy0$yy, xy$yy)
-    td <- nrow(xy0$yy)
     
-  } else if(type == "prior") {
-    xy <- model$prior_fun(model)
-    model$bw <- 0
-    model$args$constant <- FALSE
-    td <- 0
+    #Initial values and scale
+    init <- tryCatch({
+      model$initial(xy, model$args)
+    }, error = function(e) {
+      mes <- paste0("Initial parameter values cannot be calculated \n",
+                    "  (most likely GMM fails): \n",
+                    e)
+      stop(mes)
+    })
+    init <- model$initial(xy, model$args)
+    initial_th <- init$th
+    initial_scale <- init$cov
     
-  } else if(type == "likelihood") {
-    xy <- model$args$xy
-    td <- 0
+    last_density <- eval_sbetel(th = initial_th, 
+                                model = model, 
+                                xy = xy,
+                                td = td,
+                                itermax = itermax)
+    
+    if(last_density != -Inf) {
+      success <- TRUE
+      break
+    }
   }
-  
-  #Initial values and scale
-  init <- model$initial(xy, model$args)
-  initial_th <- init$th
-  initial_scale <- init$cov
+  if(success == FALSE) {
+    stop("Initial parameter values keep falling outside the support of the posterior density.")
+  }
   
   #Pre-draw RW-steps
   moves <- mvtnorm::rmvnorm(N, 
@@ -48,12 +77,6 @@ run_chain <- function(chain_name,
   mat <- matrix(NA, ncol = length(initial_th), nrow = N + 1)
   mat[1,] <- initial_th
   likelihoods <- rep(NA, nrow(mat))
-  
-  last_density <- eval_sbetel(th = mat[1,], 
-                              model = model, 
-                              xy = xy,
-                              td = td,
-                              itermax = itermax)
   likelihoods[1] <- last_density
   
   #Start the chain
