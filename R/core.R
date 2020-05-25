@@ -117,6 +117,20 @@ init_sbetel <- function(y,
       } 
       args$epsilon <- rep(NA, ncol(y))
       for(i in 1:ncol(y)) args$epsilon[i] <- sqrt(ar(y[,i], aic = F, order.max = 1)$var.pred)
+      if(is.null(args$B0)) {
+        args$B0 <- diag(args$epsilon)
+        if(verbose == TRUE) cat("B0 not provided. Defaults as diag(epsilon). \n")
+      } else if(length(args$B0) == 1) { 
+        cat(paste0("Off-diagonal for B0 provided (", args$B0, "), diagonal set according to epsilon. \n"))
+        B0 <- matrix(args$B0, ncol = ncol(y), nrow = ncol(y))
+        diag(B0) <- args$epsilon
+        args$B0 <- B0
+      } else if(length(B0) == ncol(y)^2){
+        if(sum(is.na(diag(args$B0))) == ncol(args$B0)) diag(args$B0) <- args$epsilon
+        if(verbose == TRUE) cat("Diagonal of B0 set to epsilon. \n")
+      } else {
+        stop("B0 misspecified.")
+      }
       
       if(is.null(initial)) initial <- sbetel:::initial_svar
       if(verbose == TRUE) cat("GMM estimates will be used as initial values. \n")

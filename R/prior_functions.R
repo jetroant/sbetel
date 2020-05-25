@@ -50,7 +50,7 @@ prior_fun_svar <- function(model) {
     lambda <- model$args$lambda
   }
   if(is.null(model$args$prior_skew)) {
-    prior_skew <- -0.2
+    prior_skew <- 0
   } else {
     prior_skew <- model$args$prior_skew
   }
@@ -63,7 +63,6 @@ prior_fun_svar <- function(model) {
   p <- model$args$p
   m <- ncol(model$y)
   stat <- model$args$stat
-  epsilon <- model$args$epsilon
 
   prior_mean <- matrix(0, nrow = m*p, ncol = m)
   prior_mean[c(1:m),] <- diag(model$args$stat)
@@ -77,17 +76,12 @@ prior_fun_svar <- function(model) {
     xx0[rows,cols] <- xx[rows_xx, cols + 1]*i*lambda
   }
   
-  yy0 <- xx0 %*% prior_mean
-  for(i in 1:p) {
-    rows <- (i*nn+1):(i*nn+nn)-nn
-    cols <- (i*m+1):(i*m+m)-m
-    for(j in 1:m) {
-      yy0[rows,j] <- yy0[rows,j] + 
-        model$args$epsilon[j]*sgt::rsgt(nn, mu = 0, sigma = 1, 
-                                        lambda = prior_skew, p = 2, q = prior_dof/2,
-                                        mean.cent = TRUE, var.adj = TRUE)
-    }
-  }
+  errors <- matrix(sgt::rsgt(nrow(xx0)*m, mu = 0, sigma = 1, 
+                             lambda = prior_skew, p = 2, q = prior_dof/2,
+                             mean.cent = TRUE, var.adj = TRUE),
+                   ncol = m)
+  errors <- errors %*% t(model$args$B0)
+  yy0 <- xx0 %*% prior_mean + errors
   
   list("yy" = yy0, "xx" = xx0)
 }

@@ -83,4 +83,70 @@ load_backup <- function(dir) {
   ret
 }
 
+#Approximates the prior
+approx_prior <- function(model, nc = 100, cl = 1000) {
+  
+  m <- ncol(model$y)
+  p <- model$args$p
+  prior_mean <- matrix(0, nrow = m*p, ncol = m)
+  prior_mean[c(1:m),] <- diag(model$args$stat)
+  prior_mean <- c(prior_mean, model$args$B0)
+  
+  model$args$constant <- FALSE
+  og_nn <- model$args$nn
+  trys <- 3
+  success <- FALSE
+  while(trys > 0) {
+    
+    xy0 <- model$prior_fun(model)
+    init <- tryCatch({
+      model$initial(xy0, model$args)
+    }, error = function(e) {
+      cat("GMM failed. Adjusting the sample size... \n")
+      cat(paste0("Trys left: ", trys - 1, "\n"))
+      NULL
+    })
+    if(!is.null(init)) break
+    trys <- trys - 1
+    
+    if(trys > 0) {
+      model$args$nn <- model$args$nn*2
+    }
+    
+  }
+  if(is.null(init)) stop("GMM keeps failing. Prior could not be approximated.")
+  if(!is.null(init)) cat("GMM succesfully estimated.")
+  
+  correction <- model$args$nn/og_nn
+  for(i in 1:nc) { 
+    
+    center_at <- mvtnorm::rmvnorm(1, 
+                                  mean = prior_mean,
+                                  sigma = init$cov*correction)
+    center_at <- c(center_at)
+    
+    #Fix this and then check prior_fun() for the same mistake!
+    
+    if(i == 1) {
+      mat <- mvtnorm::rmvnorm(cl, 
+                              mean = center_at, 
+                              sigma = init$cov*correction)
+    } else {
+      temp <- mvtnorm::rmvnorm(cl, 
+                               mean = center_at, 
+                               sigma = init$cov*correction)
+      mat <- rbind(mat, temp)
+    }
+  }
+  
+  mat
+}
+
+
+
+
+
+
+
+
 
