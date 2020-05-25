@@ -33,3 +33,46 @@ permutations <- function(n){
   }
 }
 
+#Load backup folder
+load_backup <- function(dir) {
+  
+  #Load the backup directory
+  wd <- getwd()
+  setwd(dir)
+  subchains <- list()
+  filenames <- list.files()
+  for(i in 1:length(filenames)) {
+    subchains[[i]] <- readRDS(filenames[i])
+  }
+  setwd(wd)
+  
+  #Set parameters
+  chain_length <- nrow(subchains[[1]]$chain)
+  chain_number <- length(subchains)
+  
+  #Collect the chains
+  allchains <- matrix(NA, 
+                      ncol = ncol(subchains[[1]]$chain),
+                      nrow = chain_length*chain_number
+  )
+  for(i in 1:length(subchains)) {
+    rows <- (i*chain_length+1):((i+1)*chain_length)-chain_length
+    allchains[rows,] <- subchains[[i]]$chain
+  }
+  
+  #Average acceptance rate
+  accrates <- rep(NA, chain_number)
+  for(i in 1:chain_number) accrates[i] <- subchains[[i]]$accrate
+  
+  #Collect the output
+  ret <- list(sample = allchains,
+              subchains = subchains,
+              accrates = accrates,
+              totaltime = NA,
+              tune = NA,
+              itermax = NA,
+              type = NA)
+  ret
+}
+
+
