@@ -1,7 +1,7 @@
 Package: sbetel
 Type: Package
 Title: Estimation of moment condition models with smoothed BETEL
-Version: 0.2-1
+Version: 0.2-2
 Date: 2020-24-05
 Author: Jetro Anttonen <jetro.a@gmail.com>
 Maintainer: Jetro Anttonen <jetro.a@gmail.com>
@@ -13,7 +13,9 @@ Imports:
     gmm,
     sandwich,
     parallel,
-    sgt
+    sgt,
+    expm,
+    fanplot
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 7.0.1
 Encoding: UTF-8
