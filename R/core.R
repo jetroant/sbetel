@@ -125,7 +125,7 @@ init_sbetel <- function(y,
         B0 <- matrix(args$B0, ncol = ncol(y), nrow = ncol(y))
         diag(B0) <- args$epsilon
         args$B0 <- B0
-      } else if(length(B0) == ncol(y)^2){
+      } else if(length(args$B0) == ncol(y)^2){
         if(sum(is.na(diag(args$B0))) == ncol(args$B0)) diag(args$B0) <- args$epsilon
         if(verbose == TRUE) cat("Diagonal of B0 set to epsilon. \n")
       } else {
@@ -135,9 +135,12 @@ init_sbetel <- function(y,
       if(is.null(initial)) initial <- sbetel:::initial_svar
       if(verbose == TRUE) cat("GMM estimates will be used as initial values. \n")
       
+      if(is.null(args$wmatrix)) args$wmatrix <- "optimal"
+      if(is.null(args$gmm_verbose)) args$gmm_verbose <- FALSE
       if(bw == "auto") {
         if(verbose == TRUE) cat("Choosing the optimal bandwidth parameter via GMM... \n")
-        bw <- initial(xy = args$xy, args = args, bw = TRUE)$bw
+        init_gmm <- initial(xy = args$xy, args = args, bw = TRUE, verbose = args$gmm_verbose)
+        bw <- init_gmm$bw
         if(verbose == TRUE) cat(paste0("bw = ", bw, "\n"))
       }
       

@@ -82,7 +82,16 @@ g_svar <- function(th, y, args) {
   }
   
   #Third and fourth order moment conditions
-  cMat <- sbetel:::permutations(n)
+  cMat <- matrix(NA, ncol = 2, nrow = (n*n-n))
+  count <- 0
+  for(i in 1:n) {
+    for(j in 1:n) {
+      if(i != j) {
+        count <- count + 1
+        cMat[count,] <- c(i,j)
+      }
+    }
+  }
   if("skewness" %in% args$identification) {
     block3 <- matrix(NA, nrow = nrow(errors), ncol = nrow(cMat))
     for(i in 1:nrow(cMat)) {
