@@ -9,7 +9,7 @@ irf <- function(model, output,
   B_indices <- (m*(1+m*p)+1):(m*(1+m*p)+m^2) 
   
   ret <- list()
-  rows <- sample.int(nrow(output$sample), N)
+  rows <- sample.int(nrow(output$sample), N, replace = TRUE)
   A_post <- output$sample[rows, A_indices]
   B_post <- output$sample[rows, B_indices]
   
