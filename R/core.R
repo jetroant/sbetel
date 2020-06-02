@@ -262,6 +262,7 @@ est_sbetel <- function(model,
   if(!is.null(backup)) {
     if(!is.character(backup)) stop("'backup' needs to be NULL or character string.")
     dir.create(backup, showWarnings = FALSE)
+    wd <- getwd()
   }
   
   if(verbose == TRUE) cat(paste0("Estimating the ", type, " with RWMH algorithm... \n"))
@@ -294,7 +295,7 @@ est_sbetel <- function(model,
     parallel::clusterExport(cl, 
                             list("type", "model", "chain_length",
                                  "tune", "burn", "backup", 
-                                 "trys", "itermax"),
+                                 "trys", "itermax", "wd"),
                             envir = environment())
     subchains <- tryCatch({
       parallel::parLapply(cl,
@@ -308,6 +309,7 @@ est_sbetel <- function(model,
                                                burn = burn,
                                                backup = backup,
                                                itermax = itermax,
+                                               wd = wd,
                                                trys = trys)
                           })
     }, error = function(e) {

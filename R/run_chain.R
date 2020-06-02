@@ -7,6 +7,7 @@ run_chain <- function(chain_name,
                       burn,
                       backup,
                       itermax,
+                      wd = getwd(),
                       trys = 1,
                       progressbar = FALSE) {
   
@@ -17,6 +18,7 @@ run_chain <- function(chain_name,
   #density, the prior data and initial values are regenerated
   success <- FALSE
   while(trys > 0) {
+    trys <- trys - 1
     
     #Select type
     if(type == "posterior") {
@@ -130,6 +132,7 @@ run_chain <- function(chain_name,
   
   #Save the output
   if(!is.null(backup)) {
+    setwd(wd)
     saveRDS(ret, paste0(backup, "/chain_", chain_name, ".rds"))
   }
   
