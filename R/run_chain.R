@@ -125,10 +125,12 @@ run_chain <- function(chain_name,
   accrate <- (length(unique(mat[,1]))-1)/(nrow(mat)-1)
   
   #Collect the output
+  if(type != "posterior") xy0 <- NULL
   ret <- list(chain = mat,
               burned = burned,
               likelihoods = likelihoods,
-              accrate = accrate)
+              accrate = accrate,
+              xy0 = xy0)
   
   #Save the output
   if(!is.null(backup)) {
