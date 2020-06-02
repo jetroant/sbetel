@@ -262,6 +262,7 @@ est_sbetel <- function(model,
   if(!is.null(backup)) {
     if(!is.character(backup)) stop("'backup' needs to be NULL or character string.")
     dir.create(backup, showWarnings = FALSE)
+    wd <- getwd()
   }
   wd <- getwd()
   
