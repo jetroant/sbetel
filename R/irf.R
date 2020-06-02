@@ -1,6 +1,7 @@
 
 irf <- function(model, output, 
-                horizon = 40, N = 10000) {
+                horizon = 40, N = 10000,
+                cumulate = c()) {
   
   m <- ncol(model$y)
   p <- model$args$p
@@ -40,6 +41,15 @@ irf <- function(model, output,
       setTxtProgressBar(pb, row_index)
     }
     close(pb)
+    
+    if(length(cumulate) > 0) {
+      for(i in 1:length(cumulate)) {
+        for(j in 1:N) {
+          irfs[cumulate[i],,j] <- cumsum(irfs[cumulate[i],,j])
+        }
+      }
+    }
+    
     ret[[shock_index]] <- irfs
   }
   ret
@@ -56,7 +66,7 @@ stackA <- function(A) {
 }
 
 #Plots impulse response functions
-irf_plot <- function(irf_obj, varnames) {
+irf_plot <- function(irf_obj, varnames, probs = NULL) {
   
   m <- nrow(irf_obj[[1]]) 
   par(mar = c(2,4,2,1))
@@ -76,7 +86,11 @@ irf_plot <- function(irf_obj, varnames) {
     sub_irfs <- t(irf_obj[[row]][col,,])
     mean_sub_irfs <- ts(apply(sub_irfs, 2, mean), start = 0)
     
-    p <- c(0.0249, 0.025, seq(0.1, 0.9, 0.1), 0.975, 0.9751)
+    if(is.null(probs)) {
+      p <- c(0.0249, 0.025, seq(0.1, 0.9, 0.1), 0.975, 0.9751)
+    } else {
+      p <- probs
+    }
     quant <- function(column) quantile(column, probs = p)
     quantiles_sub_irfs <- apply(sub_irfs, 2, quant)
     
@@ -89,7 +103,11 @@ irf_plot <- function(irf_obj, varnames) {
                  start = 0, fan.col = colorRampPalette(c(color, "white")),
                  rlab = NULL, ln = NULL)
     abline(h = 0, lwd = 2, lty = 2)
-    if(col == 1 & row == 1) legend("topright", c("95% of post. prob. mass"), lwd = 0, bty = "n", col = "tomato")
+    
+    post_mass <- (max(p[-length(p)]) - min(p[-1]))*100
+    if(col == 1 & row == 1) legend("topright", c(paste0(post_mass,"% of post. prob. mass")), lwd = 0, bty = "n", col = "tomato")
   }
   par(mfrow = c(1,1))
 }
+
+
