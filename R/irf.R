@@ -1,7 +1,7 @@
 
 irf <- function(model, output, 
                 horizon = 40, N = 10000,
-                cumulate = c()) {
+                cumulate = c(), secondary = NULL) {
   
   m <- ncol(model$y)
   p <- model$args$p
@@ -52,6 +52,17 @@ irf <- function(model, output,
     
     ret[[shock_index]] <- irfs
   }
+  
+  if(!is.null(secondary)) {
+    cat("Secondary impulse responses: \n")
+    secondary <- sbetel:::irf(model = model, 
+                              output = secondary,
+                              horizon = horizon,
+                              N = N,
+                              cumulate = cumulate)
+    ret$secondary <- secondary
+  }
+  
   ret
 }
 
@@ -91,18 +102,38 @@ irf_plot <- function(irf_obj, varnames, probs = NULL) {
     } else {
       p <- probs
     }
-    quant <- function(column) quantile(column, probs = p)
+    quant <- function(column, probs = p) quantile(column, probs = probs)
     quantiles_sub_irfs <- apply(sub_irfs, 2, quant)
     
     color <- "tomato"
+    ylims <- c(min(quantiles_sub_irfs), max(quantiles_sub_irfs))
+    
+    if(!is.null(irf_obj$secondary)) {
+      sub_irfs_second <- t(irf_obj$secondary[[row]][col,,])
+      mean_sub_irfs_second <- ts(apply(sub_irfs_second, 2, mean), start = 0)
+      if(is.null(probs)) {
+        p_second <- c(0.025, 0.975)
+      } else {
+        p_second <- c(probs[2], probs[(length(probs)-1)])
+      }
+      quantiles_sub_irfs_second <- apply(sub_irfs_second, 2, quant, probs = p_second)
+      ylims <- c(min(c(quantiles_sub_irfs, quantiles_sub_irfs_second)), 
+                 max(c(quantiles_sub_irfs, quantiles_sub_irfs_second)))
+    }
+      
     plot(mean_sub_irfs, lwd = 2, lty = 2, col = color, ylab = "", xlab = "", 
          main = paste0("Shock ", row, " on ", varnames[col]), 
-         ylim = c(min(quantiles_sub_irfs), max(quantiles_sub_irfs)))
+         ylim = ylims)
     grid()
     fanplot::fan(data = quantiles_sub_irfs, data.type = "values", probs = p,
                  start = 0, fan.col = colorRampPalette(c(color, "white")),
                  rlab = NULL, ln = NULL)
     abline(h = 0, lwd = 2, lty = 2)
+    
+    if(!is.null(irf_obj$secondary)) {
+      lines(ts(quantiles_sub_irfs_second[1,]), lwd = 1, lty = 2)
+      lines(ts(quantiles_sub_irfs_second[2,]), lwd = 1, lty = 2)
+    }
     
     post_mass <- (max(p[-length(p)]) - min(p[-1]))*100
     if(col == 1 & row == 1) legend("topright", c(paste0(post_mass,"% of post. prob. mass")), lwd = 0, bty = "n", col = "tomato")
