@@ -5,7 +5,7 @@ Estimation of moment condition models with smoothed BETEL
 
 ### Prerequisites
 
-Make sure you have the latest version of R installed on your computer. On top of that, see the operating system specific further prerequisities below for the package to work on your computer.
+Make sure you have the latest version of R installed on your computer. On top of that, see the operating system specific further prerequisities below for the development version of the package to work on your computer.
 
 
 #### Windows: 
